@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AMIRA — Admin</title>
+<style>
+  :root {
+    --bg: #08090b;
+    --bg-alt: #0d0f13;
+    --card: #12141a;
+    --border: #23262f;
+    --text: #f5f6f8;
+    --muted: #9aa0ab;
+    --accent: #14b8a6;
+    --accent-2: #0ea5e9;
+    --accent-hover: #2dd4bf;
+    --success: #22c55e;
+    --error: #f43f5e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand-logo {
+    font-size: 20px; font-weight: 800; letter-spacing: 0.04em;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .brand-tag { font-size: 12px; color: var(--muted); }
+  header nav a { color: var(--muted); font-size: 13px; text-decoration: none; margin-left: 20px; }
+  header nav a:hover { color: var(--text); }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 48px 24px; }
+  .badge {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+  }
+  h1 { font-size: 28px; margin-bottom: 6px; }
+  .sub { color: var(--muted); font-size: 15px; margin-bottom: 32px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px;
+  }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+  .field { margin-bottom: 22px; }
+  input[type="text"], textarea {
+    width: 100%; background: var(--bg-alt); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-size: 15px; padding: 13px 14px;
+    outline: none; font-family: inherit; transition: border-color 0.15s;
+  }
+  input[type="text"]:focus, textarea:focus { border-color: var(--accent); }
+  textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  button {
+    border: none; border-radius: 10px; padding: 14px 26px; font-size: 15px;
+    font-weight: 600; cursor: pointer; transition: background 0.15s, transform 0.1s;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #04121a;
+  }
+  button:hover:not(:disabled) { transform: translateY(-1px); }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .status { margin-top: 18px; font-size: 14px; min-height: 20px; }
+  .status.success { color: var(--success); }
+  .status.error { color: var(--error); }
+  .status.loading { color: var(--muted); }
+  .presets { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+  .preset-btn {
+    background: var(--bg-alt); border: 1px solid var(--border); color: var(--muted);
+    font-size: 13px; font-weight: 500; padding: 8px 14px; border-radius: 8px; cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .preset-btn:hover { border-color: var(--accent); color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="brand-logo">AMIRA</span>
+    <span class="brand-tag">Admin — internal use only</span>
+  </div>
+  <nav>
+    <a href="index.html">← Back to site</a>
+    <a href="calls.html">Call Log</a>
+  </nav>
+</header>
+
+<div class="wrap">
+  <span class="badge">Assistant configuration</span>
+  <h1>Update AMIRA's brain</h1>
+  <p class="sub">Set the business name and system prompt. This updates the live demo assistant instantly.</p>
+
+  <div class="card">
+    <div class="presets">
+      <span style="font-size:12px;color:var(--muted);align-self:center;">Load a template:</span>
+      <button class="preset-btn" type="button" data-preset="restaurant">Restaurant</button>
+      <button class="preset-btn" type="button" data-preset="clinic">Clinic</button>
+      <button class="preset-btn" type="button" data-preset="realestate">Real Estate</button>
+    </div>
+
+    <form id="admin-form">
+      <div class="field">
+        <label for="businessName">Business Name</label>
+        <input type="text" id="businessName" placeholder="e.g. Saffron House" />
+      </div>
+      <div class="field">
+        <label for="systemPrompt">Business System Prompt</label>
+        <textarea id="systemPrompt" placeholder="Describe how AMIRA should behave: what business this is, what it should do on calls, hours, FAQs, tone..."></textarea>
+        <div class="hint">This becomes the assistant's instructions on every call.</div>
+      </div>
+      <button type="submit" id="update-btn">Update Assistant</button>
+      <div class="status" id="status"></div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const WEBHOOK_URL = "http://localhost:5678/webhook/amira-update-assistant";
+
+  const form = document.getElementById("admin-form");
+  const businessName = document.getElementById("businessName");
+  const systemPrompt = document.getElementById("systemPrompt");
+  const button = document.getElementById("update-btn");
+  const status = document.getElementById("status");
+
+  // Built-in templates (mirror setup/demo-prompts/*.txt)
+  const TEMPLATES = {
+    restaurant: {
+      name: "Saffron House",
+      prompt: `You are Amira, the friendly AI phone receptionist for Saffron House, a North Indian restaurant. Speak naturally in English (switch to Hindi if the caller prefers). Keep replies short and warm.
+
+On every call: greet the caller, answer questions about the restaurant, take table bookings (collect name, date, time, party size and read them back to confirm), answer menu questions, and give opening hours and location.
+
+Hours: Mon-Sun, lunch 12-3pm, dinner 6-11pm. Location: Ground floor, Marina Walk, free parking. Popular dishes: butter chicken, paneer tikka, dal makhani, garlic naan, Saffron House biryani. Bookings up to 30 days ahead; groups of 8+ get a callback to confirm.
+
+Be concise (1-2 sentences), human and upbeat, confirm bookings before ending, and close politely.`
+    },
+    clinic: {
+      name: "Wellness Point Clinic",
+      prompt: `You are Amira, the professional AI phone receptionist for Wellness Point Clinic. Speak naturally in English (switch to Hindi if preferred). Keep replies short, calm, and reassuring.
+
+On every call: greet the caller, book appointments (collect name, preferred date/time, and reason in general terms; read back to confirm), and answer basic clinic questions.
+
+EMERGENCY RULE (highest priority): if the caller describes chest pain, trouble breathing, severe bleeding, loss of consciousness, stroke signs, serious injury, or says it's an emergency — do NOT book or give advice. Say: "This sounds urgent. I'm connecting you to a human right away, and if it's life-threatening please hang up and call your local emergency number now." Then hand off to a human immediately.
+
+You are not a doctor — never diagnose or give medical advice. Hours: Mon-Sat 9am-7pm, closed Sun. Location: 2nd floor, Health Plaza, wheelchair accessible. 20-minute slots, same-day often available.
+
+Be concise and calm, ask one question at a time, confirm the appointment before ending.`
+    },
+    realestate: {
+      name: "Skyline Properties",
+      prompt: `You are Amira, the AI phone assistant for Skyline Properties, a real estate agency. Speak naturally in English (switch to Hindi if preferred). Keep replies short, professional, and friendly.
+
+On every call: greet the caller, qualify the lead (buy/rent/sell, area, budget range, timeline — one question at a time), book property viewings (collect name, property/area, preferred date/time; read back to confirm), answer listing questions, and capture name + phone for follow-up.
+
+Strong leads (clear budget and timeline): tell them a senior agent will call back shortly. Do not give legal, tax, or mortgage advice — offer a specialist instead. Never invent prices or availability.
+
+Coverage: city-wide, focus on Marina, Downtown, Business Bay. Office hours: Mon-Sat 9am-6pm. Viewings usually within 48 hours.
+
+Be concise and professional, confirm viewing details before ending, and close politely.`
+    }
+  };
+
+  document.querySelectorAll(".preset-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const t = TEMPLATES[btn.dataset.preset];
+      if (!t) return;
+      businessName.value = t.name;
+      systemPrompt.value = t.prompt;
+    });
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const bn = businessName.value.trim();
+    const sp = systemPrompt.value.trim();
+    if (!sp) {
+      status.className = "status error";
+      status.textContent = "Please enter a system prompt.";
+      return;
+    }
+
+    button.disabled = true;
+    status.className = "status loading";
+    status.textContent = "Updating assistant...";
+
+    try {
+      const res = await fetch(WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ businessName: bn, systemPrompt: sp })
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        status.className = "status success";
+        status.textContent = data.message || "Assistant updated successfully";
+      } else {
+        status.className = "status error";
+        status.textContent = (data.details || data.error || "Update failed") + "";
+      }
+    } catch (err) {
+      status.className = "status error";
+      status.textContent = "Could not reach AMIRA backend. Is n8n running?";
+    } finally {
+      button.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>

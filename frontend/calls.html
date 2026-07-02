@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AMIRA — Call Log</title>
+<style>
+  :root {
+    --bg: #08090b;
+    --bg-alt: #0d0f13;
+    --card: #12141a;
+    --border: #23262f;
+    --text: #f5f6f8;
+    --muted: #9aa0ab;
+    --accent: #14b8a6;
+    --accent-2: #0ea5e9;
+    --success: #22c55e;
+    --error: #f43f5e;
+    --warn: #f59e0b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5; min-height: 100vh;
+  }
+  header {
+    border-bottom: 1px solid var(--border); padding: 18px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand-logo {
+    font-size: 20px; font-weight: 800; letter-spacing: 0.04em;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .brand-tag { font-size: 12px; color: var(--muted); }
+  header nav a { color: var(--muted); font-size: 13px; text-decoration: none; margin-left: 20px; }
+  header nav a:hover { color: var(--text); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 40px 24px; }
+  .badge {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+  }
+  h1 { font-size: 28px; margin-bottom: 6px; }
+  .sub { color: var(--muted); font-size: 15px; margin-bottom: 28px; }
+  .table-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--muted); padding: 16px 18px;
+    background: var(--bg-alt); border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody td { padding: 15px 18px; font-size: 14px; border-bottom: 1px solid var(--border); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--bg-alt); }
+  .cell-name { font-weight: 600; }
+  .cell-id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--muted); }
+  .cell-phone { font-variant-numeric: tabular-nums; }
+  .pill {
+    display: inline-block; font-size: 12px; font-weight: 600;
+    padding: 4px 10px; border-radius: 999px;
+  }
+  .pill.completed { background: rgba(34,197,94,0.12); color: var(--success); }
+  .pill.missed { background: rgba(244,63,94,0.12); color: var(--error); }
+  .pill.in-progress { background: rgba(14,165,233,0.14); color: var(--accent-2); }
+  .pill.voicemail { background: rgba(245,158,11,0.14); color: var(--warn); }
+  .note {
+    margin-top: 18px; font-size: 12px; color: #575c66;
+  }
+  @media (max-width: 720px) {
+    .table-card { overflow-x: auto; }
+    table { min-width: 720px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="brand-logo">AMIRA</span>
+    <span class="brand-tag">Call Log — internal use only</span>
+  </div>
+  <nav>
+    <a href="index.html">← Back to site</a>
+    <a href="admin.html">Update Assistant</a>
+  </nav>
+</header>
+
+<div class="wrap">
+  <span class="badge">Activity</span>
+  <h1>Recent calls</h1>
+  <p class="sub">Live view of demo and inbound calls handled by AMIRA.</p>
+
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Caller Name</th>
+          <th>Phone Number</th>
+          <th>Call ID</th>
+          <th>Status</th>
+          <th>Duration</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Today, 2:41 PM</td>
+          <td class="cell-name">Priya Sharma</td>
+          <td class="cell-phone">+971 52 924 3727</td>
+          <td class="cell-id">c428c7f1…f361</td>
+          <td><span class="pill completed">Completed</span></td>
+          <td>2m 13s</td>
+        </tr>
+        <tr>
+          <td>Today, 1:08 PM</td>
+          <td class="cell-name">Ahmed Al Mansouri</td>
+          <td class="cell-phone">+971 50 118 4402</td>
+          <td class="cell-id">9f2b71a0…8c14</td>
+          <td><span class="pill completed">Completed</span></td>
+          <td>3m 47s</td>
+        </tr>
+        <tr>
+          <td>Today, 11:52 AM</td>
+          <td class="cell-name">Unknown Caller</td>
+          <td class="cell-phone">+971 55 730 9981</td>
+          <td class="cell-id">4d8e33c9…a6f2</td>
+          <td><span class="pill missed">Missed</span></td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>Today, 10:19 AM</td>
+          <td class="cell-name">Rahul Mehta</td>
+          <td class="cell-phone">+971 56 442 0173</td>
+          <td class="cell-id">1a7c05be…d930</td>
+          <td><span class="pill voicemail">Voicemail</span></td>
+          <td>0m 41s</td>
+        </tr>
+        <tr>
+          <td>Yesterday, 6:35 PM</td>
+          <td class="cell-name">Fatima Noor</td>
+          <td class="cell-phone">+971 52 806 5514</td>
+          <td class="cell-id">7b93ee12…4c88</td>
+          <td><span class="pill completed">Completed</span></td>
+          <td>1m 58s</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="note">Showing sample data. Live call data will be wired from AgenticFlow's end-of-call reports.</p>
+</div>
+
+</body>
+</html>
