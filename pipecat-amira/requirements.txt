@@ -1,0 +1,6 @@
+pipecat-ai[sarvam,google,groq,silero,webrtc]
+pipecat-ai-small-webrtc-prebuilt
+fastapi
+uvicorn
+python-dotenv
+aiohttp
