@@ -539,7 +539,14 @@
         const session = await startRes.json();
         if (!startRes.ok || !session.success) throw new Error(session.details || "session failed");
 
-        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            channelCount: 1,
+          }
+        });
         pc = new RTCPeerConnection({ iceServers: session.iceConfig.iceServers });
 
         // Data channel for RTVI transcript events — must be created before offer
