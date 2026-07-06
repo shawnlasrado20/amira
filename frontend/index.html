@@ -101,9 +101,11 @@
           <span style="width:4px;height:100%;border-radius:4px;background:#e9c7b6;transform-origin:center;animation:eq 1.2s ease-in-out infinite;animation-delay:-.55s"></span>
           <span style="width:4px;height:100%;border-radius:4px;background:var(--accent,#ef5b2b);transform-origin:center;animation:eq 1s ease-in-out infinite;animation-delay:-.25s"></span>
         </div>
-        <div style="background: #211b16; border-radius: 16px; padding: 16px 18px;">
+        <div id="transcript-box" style="background: #211b16; border-radius: 16px; padding: 16px 18px; min-height: 80px; max-height: 160px; overflow-y: auto;">
           <div style="font-size: 12px; color: #a79f95; margin-bottom: 8px; letter-spacing: .04em;">TRANSCRIPT</div>
-          <p style="font-size: 15px; line-height: 1.5; margin: 0; color: #ede6dc;"><span style="color: var(--accent,#ef5b2b); font-weight: 600;">Amira:</span> Of course — I have Thursday at 2pm or Friday morning. Which works better for you?</p>
+          <div id="transcript-lines" style="display: flex; flex-direction: column; gap: 6px;">
+            <p id="transcript-placeholder" style="font-size: 15px; line-height: 1.5; margin: 0; color: #ede6dc;"><span style="color: var(--accent,#ef5b2b); font-weight: 600;">Amira:</span> Of course — I have Thursday at 2pm or Friday morning. Which works better for you?</p>
+          </div>
         </div>
         <div style="display: flex; gap: 10px; margin-top: 16px;">
           <div style="flex: 1; text-align: center; background: #211b16; border-radius: 12px; padding: 12px;"><div style="font-size: 12px; color: #a79f95;">Booked</div><div style="font-weight: 600; font-size: 15px;">Thu · 2:00pm</div></div>
@@ -348,9 +350,95 @@
     const waveformBars = document.querySelectorAll("#waveform span");
     const remoteAudio = document.getElementById("remoteAudio");
 
-    let pc = null, micStream = null, timerInterval = null, live = false;
+    const transcriptLines = document.getElementById("transcript-lines");
+    const transcriptPlaceholder = document.getElementById("transcript-placeholder");
+    const transcriptBox = document.getElementById("transcript-box");
 
-    // Waveform idles until a real call is running
+    let pc = null, dc = null, micStream = null, timerInterval = null, live = false;
+    let partialUserEl = null, partialBotEl = null;
+
+    // ── Transcript rendering ──────────────────────────────────────────────────
+    function clearTranscript() {
+      // remove all lines except the placeholder, then hide it
+      Array.from(transcriptLines.children).forEach((el) => {
+        if (el !== transcriptPlaceholder) el.remove();
+      });
+      transcriptPlaceholder.style.display = "none";
+      partialUserEl = null;
+      partialBotEl = null;
+    }
+
+    function restoreTranscriptPlaceholder() {
+      transcriptPlaceholder.style.display = "";
+      partialUserEl = null;
+      partialBotEl = null;
+    }
+
+    function makeLine(speaker, text, isPartial) {
+      const p = document.createElement("p");
+      p.style.cssText = "font-size:15px;line-height:1.5;margin:0;color:#ede6dc;";
+      const label = document.createElement("span");
+      label.style.cssText = "font-weight:600;";
+      if (speaker === "bot") {
+        label.style.color = "var(--accent,#ef5b2b)";
+        label.textContent = "Amira: ";
+      } else {
+        label.style.color = "#a3d9a5";
+        label.textContent = "You: ";
+      }
+      const body = document.createElement("span");
+      body.textContent = text;
+      if (isPartial) body.style.opacity = "0.65";
+      p.appendChild(label);
+      p.appendChild(body);
+      transcriptLines.appendChild(p);
+      transcriptBox.scrollTop = transcriptBox.scrollHeight;
+      return { el: p, body };
+    }
+
+    function handleRTVIMessage(raw) {
+      let msg;
+      try { msg = JSON.parse(raw); } catch { return; }
+      if (msg.label !== "rtvi-ai") return;
+
+      const { type, data } = msg;
+
+      if (type === "user-transcription" && data?.text?.trim()) {
+        const text = data.text.trim();
+        const isFinal = data.final !== false;
+        if (!partialUserEl) {
+          const { el, body } = makeLine("user", text, !isFinal);
+          partialUserEl = { el, body };
+        } else {
+          partialUserEl.body.textContent = text;
+          partialUserEl.body.style.opacity = isFinal ? "1" : "0.65";
+        }
+        if (isFinal) {
+          partialUserEl.body.style.opacity = "1";
+          partialUserEl = null;
+        }
+        transcriptBox.scrollTop = transcriptBox.scrollHeight;
+      }
+
+      if (type === "bot-transcription" && data?.text?.trim()) {
+        const text = data.text.trim();
+        const isFinal = data.final !== false;
+        if (!partialBotEl) {
+          const { el, body } = makeLine("bot", text, !isFinal);
+          partialBotEl = { el, body };
+        } else {
+          partialBotEl.body.textContent = partialBotEl.body.textContent + (isFinal ? "" : text);
+          partialBotEl.body.style.opacity = isFinal ? "1" : "0.65";
+        }
+        if (isFinal) {
+          if (partialBotEl) partialBotEl.body.style.opacity = "1";
+          partialBotEl = null;
+        }
+        transcriptBox.scrollTop = transcriptBox.scrollHeight;
+      }
+    }
+
+    // ── Waveform idles until a real call is running ───────────────────────────
     function setWaveform(playing) {
       waveformBars.forEach((b) => { b.style.animationPlayState = playing ? "running" : "paused"; });
     }
@@ -369,6 +457,7 @@
           const s = Math.floor((Date.now() - startedAt) / 1000);
           widgetStatus.textContent = "on a call · " + Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
         }, 1000);
+        clearTranscript();
       } else {
         talkBtn.textContent = "🎙️ Talk to Amira live";
         liveBadge.textContent = "STANDBY";
@@ -377,6 +466,7 @@
         widgetStatus.textContent = "ready when you are";
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = null;
+        restoreTranscriptPlaceholder();
       }
       setWaveform(on);
       talkBtn.disabled = false;
@@ -384,21 +474,22 @@
 
     function cleanup() {
       if (micStream) micStream.getTracks().forEach((t) => t.stop());
+      if (dc) { try { dc.close(); } catch {} }
       if (pc) pc.close();
-      pc = micStream = null;
+      pc = dc = micStream = null;
       setLiveUI(false);
     }
 
-    function waitForIceGathering(pc) {
-      if (pc.iceGatheringState === "complete") return Promise.resolve();
+    function waitForIceGathering(peerConn) {
+      if (peerConn.iceGatheringState === "complete") return Promise.resolve();
       return new Promise((resolve) => {
         const check = () => {
-          if (pc.iceGatheringState === "complete") {
-            pc.removeEventListener("icegatheringstatechange", check);
+          if (peerConn.iceGatheringState === "complete") {
+            peerConn.removeEventListener("icegatheringstatechange", check);
             resolve();
           }
         };
-        pc.addEventListener("icegatheringstatechange", check);
+        peerConn.addEventListener("icegatheringstatechange", check);
         setTimeout(resolve, 2000);
       });
     }
@@ -418,6 +509,11 @@
 
         micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         pc = new RTCPeerConnection({ iceServers: session.iceConfig.iceServers });
+
+        // Data channel for RTVI transcript events — must be created before offer
+        dc = pc.createDataChannel("pipecat-ai");
+        dc.onmessage = (e) => handleRTVIMessage(e.data);
+
         micStream.getTracks().forEach((t) => pc.addTrack(t, micStream));
         pc.ontrack = (e) => { remoteAudio.srcObject = e.streams[0]; };
         pc.onconnectionstatechange = () => {
