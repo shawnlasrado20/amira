@@ -24,6 +24,7 @@ from typing import Any
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from loguru import logger
@@ -70,6 +71,17 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Amira Pipecat Server", lifespan=lifespan)
+
+# The product frontend (localhost:3000) posts SDP offers to /sessions/{id}/api/offer
+# from a different origin, so cross-origin requests must be allowed. Localhost-only
+# today; tighten allow_origins when this is deployed anywhere public.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.mount("/client", SmallWebRTCPrebuiltUI)
 
 

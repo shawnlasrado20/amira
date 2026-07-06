@@ -1,28 +1,40 @@
 # n8n workflows
 
-Exported from n8n (v2.7.5). These are the two **active** workflows behind AMIRA.
+## Current (Pipecat backend)
 
 | file | workflow | webhook path | purpose |
 |------|----------|--------------|---------|
-| `outbound-call.json` | AMIRA - Outbound Call (Webhook API) | `/webhook/amira-call` | places the demo call (frontend → AgenticFlow `POST /call`) |
-| `update-assistant.json` | AMIRA - Update Assistant | `/webhook/amira-update-assistant` | updates the assistant system prompt (`PATCH /assistant/{id}`) |
+| `start-pipecat-session.json` | AMIRA - Start Pipecat Session | `/webhook/amira-start` | creates a voice session (frontend → Pipecat `POST /start`), returns `{success, sessionId, iceConfig}` |
 
-## Import
+The frontend then does the WebRTC SDP handshake **directly** with Pipecat at
+`POST http://localhost:8000/sessions/{sessionId}/api/offer` — n8n is only in the
+loop for session creation (and future post-call logging).
+
+### Import (Docker n8n)
+
+If n8n runs in Docker (container name may differ):
 
 ```bash
-n8n import:workflow --input=outbound-call.json
-n8n import:workflow --input=update-assistant.json
+docker cp start-pipecat-session.json <container>:/tmp/wf.json
+docker exec <container> n8n import:workflow --input=/tmp/wf.json
+docker restart <container>
 ```
 
-Then, in n8n:
+Notes:
+- The HTTP Request node targets `http://host.docker.internal:8000/start` because
+  n8n-in-Docker can't reach the Mac host via `localhost`. If n8n runs directly on
+  the host, change it to `http://localhost:8000/start`.
+- No credential needed — Pipecat has no auth (localhost only).
+- If the CLI import hits `SqliteWriteConnectionMutex` timeouts or the workflow
+  won't activate, import via the n8n UI instead (Workflows → Import from File),
+  then toggle it active.
 
-1. Open each workflow → the **HTTP Request** node → set its **Header Auth** credential.
-   Create one of type *Header Auth* with **Name** `X-Api-Key` and **Value** = your
-   AgenticFlow API key. (The exported JSON references a credential by id/name only —
-   the actual key is never included.)
-2. Confirm the assistant id / phone number id in the code node match your account.
-3. **Activate** each workflow.
+## Legacy (AgenticFlow era — no longer used)
 
-> Note: importing via CLI while n8n is running deactivates the workflow; publish it and
-> restart the n8n process for changes to take effect. See `../../CLAUDE.md` for the exact
-> restart pattern and all account-specific IDs.
+| file | workflow | webhook path | purpose |
+|------|----------|--------------|---------|
+| `outbound-call.json` | AMIRA - Outbound Call (Webhook API) | `/webhook/amira-call` | placed phone demo calls (frontend → AgenticFlow `POST /call`) |
+| `update-assistant.json` | AMIRA - Update Assistant | `/webhook/amira-update-assistant` | updated the assistant system prompt (`PATCH /assistant/{id}`) |
+
+Kept for reference. They require an AgenticFlow `X-Api-Key` Header Auth credential
+and account-specific assistant/phone-number IDs — see `../../CLAUDE.md`.

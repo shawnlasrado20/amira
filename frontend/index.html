@@ -265,6 +265,39 @@
   .demo-btn.state-loading { background: var(--border); color: var(--muted); }
   .demo-btn.state-success { background: var(--success); color: #04210f; }
   .demo-btn.state-error { background: var(--error); color: #2b0710; }
+  .demo-btn.state-live { background: var(--error); color: #fff; }
+
+  /* Voice session status row (hidden until connected) */
+  .voice-status {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 18px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .voice-status.visible { display: flex; }
+  .live-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--error);
+    animation: livePulse 1.4s infinite;
+  }
+  @keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+  .voice-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 22px;
+  }
+  .voice-bars span {
+    width: 4px;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--accent), var(--accent-2));
+    transition: height 0.08s linear;
+  }
   .spinner {
     width: 16px;
     height: 16px;
@@ -448,23 +481,22 @@
     <div class="section-head">
       <span class="eyebrow">Live demo</span>
       <h2>Experience AMIRA right now</h2>
-      <p>Enter your number and AMIRA will call you in seconds.</p>
+      <p>Click the mic and talk to AMIRA directly in your browser.</p>
     </div>
 
     <div class="demo-card">
-      <form id="call-form">
-        <div class="field-row">
-          <input type="text" id="name" placeholder="Your Name" required />
-        </div>
-        <div class="field-row">
-          <span class="country-code">🇦🇪 +971</span>
-          <input type="tel" id="phone" placeholder="Your Phone Number" inputmode="tel" required />
-        </div>
-        <button type="submit" id="call-btn" class="btn demo-btn state-default">Call me now</button>
-      </form>
-      <div class="call-id-card" id="callIdCard">
-        Call ID (internal): <code id="callIdValue"></code>
+      <div class="field-row">
+        <input type="text" id="name" placeholder="Your Name (optional)" />
       </div>
+      <button id="mic-btn" class="btn demo-btn state-default">🎙️ Talk to AMIRA</button>
+      <div class="voice-status" id="voiceStatus">
+        <span class="live-dot"></span>
+        <span id="voiceTimer">0:00</span>
+        <div class="voice-bars" id="voiceBars">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+      <audio id="remoteAudio" autoplay playsinline></audio>
     </div>
   </div>
 </section>
@@ -550,19 +582,27 @@
         <a href="#">Contact</a>
       </div>
     </div>
-    <div class="footer-powered">Powered by AgenticFlow</div>
+    <div class="footer-powered">Powered by Pipecat · Sarvam AI</div>
   </div>
 </footer>
 
 <script>
-  const WEBHOOK_URL = "http://localhost:5678/webhook/amira-call";
+  // n8n orchestrates session creation; the browser then talks WebRTC to Pipecat directly.
+  const START_WEBHOOK_URL = "http://localhost:5678/webhook/amira-start";
+  const PIPECAT_BASE_URL = "http://localhost:8000";
 
-  const form = document.getElementById("call-form");
   const nameInput = document.getElementById("name");
-  const phoneInput = document.getElementById("phone");
-  const button = document.getElementById("call-btn");
-  const callIdCard = document.getElementById("callIdCard");
-  const callIdValue = document.getElementById("callIdValue");
+  const button = document.getElementById("mic-btn");
+  const voiceStatus = document.getElementById("voiceStatus");
+  const voiceTimer = document.getElementById("voiceTimer");
+  const voiceBars = document.querySelectorAll("#voiceBars span");
+  const remoteAudio = document.getElementById("remoteAudio");
+
+  let pc = null;
+  let micStream = null;
+  let timerInterval = null;
+  let audioCtx = null;
+  let barsRaf = null;
 
   function setButtonState(state, text) {
     button.className = "btn demo-btn state-" + state;
@@ -570,40 +610,126 @@
     button.disabled = state === "loading";
   }
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const name = nameInput.value.trim();
-    const phoneNumber = phoneInput.value.trim();
-    if (!name || !phoneNumber) return;
+  function startTimer() {
+    const startedAt = Date.now();
+    timerInterval = setInterval(() => {
+      const s = Math.floor((Date.now() - startedAt) / 1000);
+      voiceTimer.textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+    }, 1000);
+  }
 
-    callIdCard.classList.remove("visible");
-    setButtonState("loading", '<span class="spinner"></span> Calling you...');
+  function startBars(stream) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 64;
+    audioCtx.createMediaStreamSource(stream).connect(analyser);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    (function draw() {
+      analyser.getByteFrequencyData(data);
+      voiceBars.forEach((bar, i) => {
+        const v = data[i * 3] / 255;
+        bar.style.height = (4 + v * 18) + "px";
+      });
+      barsRaf = requestAnimationFrame(draw);
+    })();
+  }
 
+  function cleanup() {
+    if (timerInterval) clearInterval(timerInterval);
+    if (barsRaf) cancelAnimationFrame(barsRaf);
+    if (audioCtx) audioCtx.close().catch(() => {});
+    if (micStream) micStream.getTracks().forEach((t) => t.stop());
+    if (pc) pc.close();
+    pc = micStream = timerInterval = audioCtx = barsRaf = null;
+    voiceStatus.classList.remove("visible");
+    voiceTimer.textContent = "0:00";
+  }
+
+  function endCall() {
+    cleanup();
+    setButtonState("default", "🎙️ Talk to AMIRA");
+  }
+
+  function failCall() {
+    cleanup();
+    setButtonState("error", "Something went wrong. Try again.");
+    setTimeout(() => setButtonState("default", "🎙️ Talk to AMIRA"), 5000);
+  }
+
+  // Wait for ICE gathering to finish so we send one complete offer.
+  // (No trickle ICE — Pipecat's answer comes back in a single round trip.)
+  function waitForIceGathering(pc) {
+    if (pc.iceGatheringState === "complete") return Promise.resolve();
+    return new Promise((resolve) => {
+      const check = () => {
+        if (pc.iceGatheringState === "complete") {
+          pc.removeEventListener("icegatheringstatechange", check);
+          resolve();
+        }
+      };
+      pc.addEventListener("icegatheringstatechange", check);
+      setTimeout(resolve, 2000); // localhost STUN is fast; don't hang forever
+    });
+  }
+
+  async function startCall() {
+    setButtonState("loading", '<span class="spinner"></span> Connecting...');
     try {
-      const res = await fetch(WEBHOOK_URL, {
+      // 1. Ask n8n to create a Pipecat session
+      const startRes = await fetch(START_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phoneNumber })
+        body: JSON.stringify({ name: nameInput.value.trim() })
       });
+      const session = await startRes.json();
+      if (!startRes.ok || !session.success) throw new Error(session.details || "session failed");
 
-      const data = await res.json();
+      // 2. Mic + peer connection
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      pc = new RTCPeerConnection({ iceServers: session.iceConfig.iceServers });
+      micStream.getTracks().forEach((t) => pc.addTrack(t, micStream));
 
-      if (res.ok && data.success) {
-        setButtonState("success", "Call incoming! Pick up your phone");
-        if (data.callId) {
-          callIdValue.textContent = data.callId;
-          callIdCard.classList.add("visible");
+      pc.ontrack = (e) => { remoteAudio.srcObject = e.streams[0]; };
+      pc.onconnectionstatechange = () => {
+        if (["failed", "disconnected", "closed"].includes(pc?.connectionState) && button.classList.contains("state-live")) {
+          endCall();
         }
-      } else {
-        setButtonState("error", "Something went wrong. Try again.");
-      }
-    } catch (err) {
-      setButtonState("error", "Something went wrong. Try again.");
-    }
+      };
 
-    setTimeout(() => {
-      if (!button.disabled) setButtonState("default", "Call me now");
-    }, 6000);
+      // 3. SDP handshake with Pipecat
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await waitForIceGathering(pc);
+
+      const offerRes = await fetch(
+        PIPECAT_BASE_URL + "/sessions/" + session.sessionId + "/api/offer",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sdp: pc.localDescription.sdp,
+            type: pc.localDescription.type
+          })
+        }
+      );
+      if (!offerRes.ok) throw new Error("offer failed");
+      const answer = await offerRes.json();
+      await pc.setRemoteDescription(answer);
+
+      // 4. Live
+      setButtonState("live", "🔴 End call");
+      voiceStatus.classList.add("visible");
+      startTimer();
+      startBars(micStream);
+    } catch (err) {
+      console.error("Voice session error:", err);
+      failCall();
+    }
+  }
+
+  button.addEventListener("click", () => {
+    if (button.classList.contains("state-live")) endCall();
+    else if (!button.disabled) startCall();
   });
 </script>
 

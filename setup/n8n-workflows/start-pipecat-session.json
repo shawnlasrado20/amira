@@ -1,0 +1,138 @@
+{
+  "name": "AMIRA - Start Pipecat Session",
+  "active": true,
+  "versionId": "a1b2c3d4-e5f6-4a00-8a00-000000000010",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "amira-start",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        0
+      ],
+      "id": "f1a2b3c4-0004-4e00-8a00-000000000001",
+      "name": "Start Request (from frontend)",
+      "webhookId": "amira-start"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const body = $input.first().json.body || {};\nconst callerName = (body.name || '').toString().trim();\n\n// Pipecat's /start returns iceConfig only when enableDefaultIceServers is set.\n// callerName is stored on the session server-side (active_sessions) for future use.\nreturn [{\n  json: {\n    enableDefaultIceServers: true,\n    body: { callerName }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -360,
+        0
+      ],
+      "id": "f1a2b3c4-0004-4e00-8a00-000000000002",
+      "name": "Build Start Payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/start",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -120,
+        0
+      ],
+      "id": "f1a2b3c4-0004-4e00-8a00-000000000003",
+      "name": "Create Session (POST /start)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const res = $input.first().json;\n\n// HTTP node failed (pipecat down / network error with continueRegularOutput)\nif (res && res.error) {\n  const details = (res.error && (res.error.message || res.error.description)) || res.error || 'Unknown error';\n  return [{\n    json: {\n      success: false,\n      error: 'Could not start voice session',\n      details: details.toString()\n    }\n  }];\n}\n\nif (!res || !res.sessionId) {\n  return [{\n    json: {\n      success: false,\n      error: 'Could not start voice session',\n      details: 'No sessionId returned from Pipecat'\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    success: true,\n    sessionId: res.sessionId,\n    iceConfig: res.iceConfig || { iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }] }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        120,
+        0
+      ],
+      "id": "f1a2b3c4-0004-4e00-8a00-000000000004",
+      "name": "Format Session Response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        360,
+        0
+      ],
+      "id": "f1a2b3c4-0004-4e00-8a00-000000000005",
+      "name": "Respond to Frontend"
+    }
+  ],
+  "connections": {
+    "Start Request (from frontend)": {
+      "main": [
+        [
+          {
+            "node": "Build Start Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Start Payload": {
+      "main": [
+        [
+          {
+            "node": "Create Session (POST /start)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Session (POST /start)": {
+      "main": [
+        [
+          {
+            "node": "Format Session Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Session Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Frontend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "Isyq6CiuDBePRdOY"
+}
