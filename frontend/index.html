@@ -547,7 +547,10 @@
         dc.onmessage = (e) => handleRTVIMessage(e.data);
 
         micStream.getTracks().forEach((t) => pc.addTrack(t, micStream));
-        pc.ontrack = (e) => { remoteAudio.srcObject = e.streams[0]; };
+        pc.ontrack = (e) => {
+          remoteAudio.srcObject = e.streams[0];
+          remoteAudio.play().catch(() => {});
+        };
         pc.onconnectionstatechange = () => {
           if (live && ["failed", "disconnected", "closed"].includes(pc?.connectionState)) cleanup();
         };
