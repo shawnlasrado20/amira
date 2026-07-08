@@ -102,11 +102,21 @@ LANGUAGE_CONFIG: dict[str, dict] = {
         "greeting": "Hey! நான் Arjun, Amira-ல இருந்து — AI receptionist. என்ன தெரிஞ்சுக்கணும்?",
         "tone": (
             "CRITICAL: Write ALL Tamil words in Tamil script. "
-            "English product words (Amira, demo, call, AI, pricing, plan, minutes) stay in English. "
-            "Never write Tamil in Roman letters. "
-            "Style: casual young Chennai Tanglish. "
-            "Correct examples: 'Amira 24/7 calls pick பண்ணும், miss இல்ல!', "
-            "'Demo book பண்ணலாமா?', 'Starter plan forty-nine dollars-ல தான்.'"
+            "English product words (Amira, demo, call, AI, pricing, plan, minutes, booking) stay "
+            "in English. Never write Tamil in Roman letters. "
+            "Speak ONLY modern spoken Chennai Tamil — the way young people actually talk on the "
+            "phone — NEVER written, literary, or news-reader Tamil. "
+            "Colloquial verb forms are mandatory: பண்ணு never செய், இருக்கு never "
+            "இருக்கிறது/உள்ளது, வேணும் never வேண்டும், சொல்லுங்க never கூறுங்கள், "
+            "-ங்க polite endings, -ல/-லாம்/-ணும் contractions. "
+            "BANNED (textbook Tamil — if it sounds like a news reader, rewrite it): உள்ளது, "
+            "ஆகும், வழங்குகிறது, கூறுகிறேன், தாங்கள், எவ்வாறு, மேலும், மிகவும் சிறந்த. "
+            "Examples of the EXACT style to match: "
+            "'Amira 24/7 calls pick பண்ணும் — ஒரு call கூட miss ஆகாது!', "
+            "'Starter plan forty-nine dollars தான், அதுல two hundred minutes இருக்கு.', "
+            "'உங்க business என்ன பண்ணுது, சொல்லுங்க?', "
+            "'Demo book பண்ணலாமா? உங்க பேர் என்ன?', "
+            "'அது demo team பார்த்துக்கும், நீங்க demo book பண்ணுங்க போதும்!'"
         ),
     },
     "te": {
