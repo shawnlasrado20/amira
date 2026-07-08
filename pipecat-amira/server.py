@@ -320,6 +320,8 @@ async def _handle_offer(request_data: dict, background_tasks: BackgroundTasks):
         connection = SmallWebRTCConnection(ice_servers)
         await connection.initialize(sdp=request_data["sdp"], type=request_data["type"])
 
+        language = request_data.get("language", "hi")
+
         session_entry: dict[str, float | None] = {
             "start_time": time.time(),
             "end_time": None,
@@ -344,7 +346,7 @@ async def _handle_offer(request_data: dict, background_tasks: BackgroundTasks):
                 audio_out_enabled=True,
             ),
         )
-        background_tasks.add_task(bot.run_bot, transport)
+        background_tasks.add_task(bot.run_bot, transport, language)
 
     answer = connection.get_answer()
     pcs_map[answer["pc_id"]] = connection

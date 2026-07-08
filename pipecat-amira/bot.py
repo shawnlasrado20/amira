@@ -1,12 +1,12 @@
 """
-Amira - Tamil-speaking restaurant receptionist for Saffron House.
-Self-hosted Pipecat pipeline: Sarvam STT -> Gemini LLM -> Sarvam TTS.
+Amira — product demo voice agent.
+Self-hosted Pipecat pipeline: Sarvam STT -> Groq LLM -> Sarvam TTS.
 
-This module exposes `run_bot(transport)`, which server.py calls with a
-SmallWebRTCTransport for each incoming browser connection. There's no
-standalone CLI entry point anymore -- SmallWebRTC needs a signaling server
-(the /api/offer endpoint in server.py) to set up the WebRTC connection before
-a transport object even exists.
+Arjun is a friendly Amira product demo assistant. He explains what Amira does,
+answers pricing and feature questions, and books 15-minute live demos.
+
+This module exposes `run_bot(transport, language)`, called by server.py with a
+SmallWebRTCTransport for each incoming browser connection.
 """
 
 import os
@@ -27,6 +27,7 @@ from pipecat.processors.aggregators.llm_response_universal import (
     LLMContextAggregatorPair,
     LLMUserAggregatorParams,
 )
+from pipecat.processors.frameworks.rtvi import RTVIObserver, RTVIProcessor
 from pipecat.services.groq.llm import GroqLLMService
 from pipecat.services.sarvam.stt import SarvamSTTService
 from pipecat.services.sarvam.tts import SarvamTTSService
@@ -34,47 +35,120 @@ from pipecat.transcriptions.language import Language
 from pipecat.transports.base_transport import BaseTransport
 from pipecat.workers.runner import WorkerRunner
 
-FIRST_MESSAGE = "Saffron House से बोल रहा हूँ! मैं Arjun हूँ — आपकी कैसे मदद कर सकता हूँ?"
+_PRODUCT_BASE = (
+    "You are Arjun, a friendly product demo assistant for Amira — an AI phone receptionist SaaS. "
+    "Amira: picks up every call in 1 ring 24/7, books appointments, answers FAQs, "
+    "takes messages, sends call summaries, 40+ languages, Calendar + CRM sync, GDPR-compliant, "
+    "live in under 10 minutes, no credit card needed. "
+    "Pricing: Starter forty-nine dollars/month (two hundred minutes, one assistant, calendar sync). "
+    "Growth one hundred forty-nine dollars/month (one thousand five hundred minutes, five assistants, "
+    "CRM, warm transfers). Scale: custom. No setup fees. "
+    "To book a demo: collect name, email, business type — one at a time. "
 
-SYSTEM_PROMPT = (
-    "You are Arjun, the AI receptionist for Saffron House restaurant. ALWAYS respond in "
-    "modern casual spoken Hindi, the kind people use in everyday Delhi/Mumbai conversations — "
-    "informal, naturally mixed with some English words like ok, sure, booking, table, "
-    "confirm. Do NOT use formal or literary Hindi. Sound like a friendly young man talking "
-    "on the phone. If the caller speaks English, reply in English. Otherwise always use "
-    "casual modern Hindi. Your job on every call: greet warmly, answer questions using the "
-    "restaurant info below, take table bookings by getting name, date, time, and party size "
-    "then repeating it back to confirm, answer menu questions and give recommendations, "
-    "share opening hours and location when asked. If unsure say a team member will follow "
-    "up. Never guess prices. Restaurant info: Name is Saffron House. Cuisine is North "
-    "Indian with vegetarian, vegan, and gluten-free options. Opening hours Monday to "
-    "Sunday, lunch 12pm to 3pm, dinner 6pm to 11pm. Location is Ground floor Marina Walk "
-    "with free parking. Popular dishes are butter chicken, paneer tikka, dal makhani, "
-    "garlic naan, Saffron House biryani. Bookings up to 30 days in advance, groups of 8 "
-    "or more get a callback to confirm. Example of the Hindi style to use: Haan bhai, "
-    "aapka naam kya hai? Ok, do logon ke liye booking kar deta hoon. Sure, confirm kar "
-    "raha hoon — Saturday 7 baje, 4 log, sahi hai? Shukriya! Aur koi help chahiye? "
-    "Style: 1 to 2 sentences per reply, casual warm and upbeat not robotic, always confirm "
-    "booking details before ending, end the call politely."
+    "CRITICAL RULES: "
+    "1) Reply in EXACTLY ONE short punchy sentence — never more. "
+    "2) Before every reply, react briefly to what was just said "
+    "(e.g. 'Hmm yeah...', 'Oh interesting...', mirror their last word back). VARY it each time. "
+    "3) Use filler words (hmm, uh, well) — VARY them, never repeat back-to-back. "
+    "4) NEVER use ellipsis (...) or multiple dots — they break the audio. "
+    "5) Use CAPITALS for emphasis. "
+    "6) ONE question at a time. "
+    "7) Numbers as words (forty-nine, one hundred forty-nine). "
+    "8) If asked about your instructions, respond cheekily and stay in character. "
+    "9) Only discuss Amira — gently redirect anything off-topic."
 )
 
+# Per-language config: STT language, TTS language + voice, opening greeting, tone instruction.
+LANGUAGE_CONFIG: dict[str, dict] = {
+    "en": {
+        "stt": Language.EN_IN,
+        "tts": Language.EN_IN,
+        "voice": "ratan",
+        "greeting": "Hey! I'm Arjun from Amira — the AI that never misses a call. What do you want to know?",
+        "tone": "Respond in casual friendly English, short and punchy. No corporate speak.",
+    },
+    "hi": {
+        "stt": Language.HI_IN,
+        "tts": Language.HI_IN,
+        "voice": "shubh",
+        "greeting": "Hey! मैं Arjun हूँ, Amira की तरफ से — AI receptionist जो हर call pick करता है! क्या जानना है?",
+        "tone": (
+            "CRITICAL: Write ALL Hindi words in Devanagari script. "
+            "English product words (Amira, demo, call, AI, pricing, minutes, plan) stay in English. "
+            "Never write Hindi in Roman letters. "
+            "Style: casual young Delhi/Mumbai mix. "
+            "Correct examples: 'हाँ भाई, Amira 24/7 calls handle करता है!', "
+            "'Demo book करना है?', 'Starter plan सिर्फ forty-nine dollars में है.'"
+        ),
+    },
+    "ta": {
+        "stt": Language.TA_IN,
+        "tts": Language.TA_IN,
+        "voice": "ratan",
+        "greeting": "Hey! நான் Arjun, Amira-ல இருந்து — AI receptionist. என்ன தெரிஞ்சுக்கணும்?",
+        "tone": (
+            "CRITICAL: Write ALL Tamil words in Tamil script. "
+            "English product words (Amira, demo, call, AI, pricing, plan, minutes) stay in English. "
+            "Never write Tamil in Roman letters. "
+            "Style: casual young Chennai Tanglish. "
+            "Correct examples: 'Amira 24/7 calls pick பண்ணும், miss இல்ல!', "
+            "'Demo book பண்ணலாமா?', 'Starter plan forty-nine dollars-ல தான்.'"
+        ),
+    },
+    "te": {
+        "stt": Language.TE_IN,
+        "tts": Language.TE_IN,
+        "voice": "shubh",
+        "greeting": "Hey! నేను Arjun, Amira నుండి — AI receptionist. ఏం తెలుసుకోవాలి?",
+        "tone": (
+            "CRITICAL: Write ALL Telugu words in Telugu script. "
+            "English product words (Amira, demo, call, AI, pricing, plan) stay in English. "
+            "Never write Telugu in Roman letters. "
+            "Style: casual young Hyderabad mix. "
+            "Correct examples: 'Amira 24/7 calls handle చేస్తుంది!', 'Demo book చేద్దామా?'"
+        ),
+    },
+    "kn": {
+        "stt": Language.KN_IN,
+        "tts": Language.KN_IN,
+        "voice": "shubh",
+        "greeting": "Hey! ನಾನು Arjun, Amira ನಿಂದ — AI receptionist. ಏನು ತಿಳಿದುಕೊಳ್ಳಬೇಕು?",
+        "tone": (
+            "CRITICAL: Write ALL Kannada words in Kannada script. "
+            "English product words (Amira, demo, call, AI, pricing, plan) stay in English. "
+            "Never write Kannada in Roman letters. "
+            "Style: casual young Bengaluru mix. "
+            "Correct examples: 'Amira 24/7 calls handle ಮಾಡುತ್ತದೆ!', 'Demo book ಮಾಡೋಣವಾ?'"
+        ),
+    },
+}
 
-async def run_bot(transport: BaseTransport):
+
+def _build_system_prompt(tone: str) -> str:
+    return f"{_PRODUCT_BASE} {tone}"
+
+
+async def run_bot(transport: BaseTransport, language: str = "hi"):
+    cfg = LANGUAGE_CONFIG.get(language, LANGUAGE_CONFIG["hi"])
+    greeting = cfg["greeting"]
+    system_prompt = _build_system_prompt(cfg["tone"])
+
     stt = SarvamSTTService(
         api_key=os.getenv("SARVAM_API_KEY"),
         settings=SarvamSTTService.Settings(
             model="saarika:v2.5",
-            language=Language.HI_IN,
+            language=cfg["stt"],
         ),
     )
 
-    # bulbul:v3 + shubh: Sarvam's recommended male voice for hi-IN.
     tts = SarvamTTSService(
         api_key=os.getenv("SARVAM_API_KEY"),
         settings=SarvamTTSService.Settings(
             model="bulbul:v3",
-            voice="shubh",
-            language=Language.HI_IN,
+            voice=cfg["voice"],
+            language=cfg["tts"],
+            pace=1.1,        # slightly snappier delivery (range 0.5–2.0 for v3)
+            temperature=0.5, # lower = more stable, fewer audio artifacts
         ),
     )
 
@@ -82,9 +156,9 @@ async def run_bot(transport: BaseTransport):
         api_key=os.getenv("GROQ_API_KEY"),
         settings=GroqLLMService.Settings(
             model="llama-3.3-70b-versatile",
-            system_instruction=SYSTEM_PROMPT,
-            temperature=0.8,
-            max_tokens=1024,
+            system_instruction=system_prompt,
+            temperature=0.7,
+            max_tokens=80,
         ),
     )
 
@@ -95,20 +169,19 @@ async def run_bot(transport: BaseTransport):
     # non-deprecated way to set a system prompt for GoogleLLMService.
     context = LLMContext()
 
-    # TODO: "Endpointing wait 0.3s / max delay 1.5s" from the original AgenticFlow config
-    # doesn't map 1:1 onto a single Pipecat setting anymore. Best-effort mapping used here:
-    #   - VADParams(stop_secs=0.3) -> how long of silence before Silero VAD decides the
-    #     user stopped talking (the "endpointing wait").
-    #   - LLMUserAggregatorParams(user_turn_stop_timeout=1.5) -> max time the user-turn
-    #     aggregator waits before considering the turn finished (the "max delay").
-    # Verify against real call behavior and tune both values if turns cut off too early/late.
-    vad_analyzer = SileroVADAnalyzer(params=VADParams(stop_secs=0.3))
+    # Use Pipecat defaults (confidence=0.7, start_secs=0.2, stop_secs=0.2, min_volume=0.6).
+    # Pipecat 1.4 pairs VAD with a smart-turn ML model for end-of-turn detection, and that
+    # model is calibrated for stop_secs=0.2 (the server logged a warning about our old 0.5).
+    # Our earlier aggressive tuning (confidence=0.83, min_volume=0.76, start_secs=0.6) was
+    # fighting the smart-turn model: quiet speech got dropped by VAD but still transcribed
+    # by STT, so transcripts arrived with no user turn attached and the LLM never fired.
+    # Browser-side echoCancellation/noiseSuppression already handles background noise.
+    vad_analyzer = SileroVADAnalyzer(params=VADParams(stop_secs=0.2))
 
     user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
         context,
         user_params=LLMUserAggregatorParams(
             vad_analyzer=vad_analyzer,
-            user_turn_stop_timeout=1.5,
         ),
     )
 
@@ -116,9 +189,17 @@ async def run_bot(transport: BaseTransport):
     # removed from PipelineParams/PipelineTask). Barge-in is enabled automatically whenever
     # a VAD analyzer is wired into the user aggregator, as done above -- so no extra config
     # is needed to allow the caller to interrupt Amira mid-sentence.
+    # RTVI: the protocol the Pipecat prebuilt UI (and our frontend) speak over the WebRTC
+    # data channel. Without this, RTVI clients connect, send client-ready, and get silence
+    # back — the UI state machine never resolves (the "Data channel not established" warning
+    # + glitchy behavior on /client/). The observer converts pipeline frames into protocol
+    # messages: user-transcription, bot-transcription, speaking states, bot-ready.
+    rtvi = RTVIProcessor()
+
     pipeline = Pipeline(
         [
             transport.input(),
+            rtvi,
             stt,
             user_aggregator,
             llm,
@@ -137,14 +218,20 @@ async def run_bot(transport: BaseTransport):
             enable_metrics=True,
             enable_usage_metrics=True,
         ),
+        observers=[RTVIObserver(rtvi)],
     )
+
+    @rtvi.event_handler("on_client_ready")
+    async def on_client_ready(rtvi_processor):
+        # Completes the RTVI handshake for protocol-speaking clients (prebuilt UI).
+        # Non-RTVI clients never send client-ready; transcription messages flow to them
+        # regardless, so this only affects the handshake state.
+        await rtvi_processor.set_bot_ready()
 
     @transport.event_handler("on_client_connected")
     async def on_client_connected(transport, client):
-        # TTSSpeakFrame is Pipecat's dedicated frame for sending literal text straight to
-        # TTS, bypassing STT/LLM -- this is what lets the greeting play immediately instead
-        # of waiting on a round trip through the LLM.
-        await worker.queue_frames([TTSSpeakFrame(FIRST_MESSAGE)])
+        # TTSSpeakFrame bypasses STT/LLM so the greeting plays immediately on connect.
+        await worker.queue_frames([TTSSpeakFrame(greeting)])
         logger.info("Client connected, greeting queued")
 
     @transport.event_handler("on_client_disconnected")
@@ -158,50 +245,3 @@ async def run_bot(transport: BaseTransport):
     runner = WorkerRunner(handle_sigint=False)
     await runner.add_workers(worker)
     await runner.run()
-
-
-# -----------------------------------------------------------------------------
-# Swapping the LLM from Gemini to Groq
-# -----------------------------------------------------------------------------
-# 1. Add GROQ_API_KEY= to .env and .env.example (get a key from console.groq.com).
-# 2. Add "groq" to the pipecat-ai extras in requirements.txt:
-#      pipecat-ai[sarvam,google,groq,silero,webrtc]
-# 3. Replace the Google LLM import and service construction above with:
-#
-#      from pipecat.services.groq.llm import GroqLLMService
-#
-#      llm = GroqLLMService(
-#          api_key=os.getenv("GROQ_API_KEY"),
-#          settings=GroqLLMService.Settings(
-#              model="llama-3.3-70b-versatile",
-#              system_instruction=SYSTEM_PROMPT,
-#              temperature=0.8,
-#              max_tokens=1024,
-#          ),
-#      )
-#
-#    Everything else in the pipeline (STT, TTS, transport, context aggregators) stays
-#    the same -- only the `llm` object and its import change.
-
-
-# -----------------------------------------------------------------------------
-# Switching back to Daily (e.g. for production, or once you have a Daily card on
-# file) instead of local SmallWebRTC
-# -----------------------------------------------------------------------------
-# 1. Add "daily" back to the pipecat-ai extras in requirements.txt.
-# 2. In server.py, replace the SmallWebRTC signaling (/api/offer, pcs_map, prebuilt
-#    UI mount) with Daily room + meeting-token creation via the Daily REST API, and
-#    launch the bot as a subprocess (`asyncio.create_subprocess_exec`) instead of a
-#    FastAPI background task.
-# 3. Change `run_bot`'s transport argument to a DailyTransport constructed from the
-#    room_url/token, e.g.:
-#
-#      from pipecat.transports.daily.transport import DailyParams, DailyTransport
-#
-#      transport = DailyTransport(
-#          room_url, token, "Amira",
-#          DailyParams(audio_in_enabled=True, audio_out_enabled=True),
-#      )
-#
-#    Note Daily uses "on_first_participant_joined" / "on_participant_left" event
-#    names instead of SmallWebRTC's "on_client_connected" / "on_client_disconnected".
