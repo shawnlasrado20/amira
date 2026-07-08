@@ -182,10 +182,11 @@ async def run_bot(transport: BaseTransport, language: str = "hi"):
             model="llama-3.3-70b-versatile",
             system_instruction=system_prompt,
             temperature=0.7,
-            # Devanagari/Tamil are token-expensive on Llama's tokenizer — 80 tokens can be
-            # under 40 Indic characters, which truncates replies mid-sentence and TTS then
-            # speaks the fragment. The style rules cap length; this is just headroom.
-            max_tokens=200,
+            # Indic scripts cost ~2-4 tokens PER CHARACTER on Llama's tokenizer, so even a
+            # two-sentence Tamil/Hindi reply can exceed 200 tokens — observed live: every
+            # reply hit the cap exactly and got truncated mid-sentence. The prompt's
+            # "1-2 sentences" rule governs length; this cap is only a runaway safety net.
+            max_tokens=500,
         ),
     )
 
