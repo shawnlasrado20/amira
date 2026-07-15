@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assistant — Amira</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --accent: #ef5b2b; --ink: #17130f; --paper: #f6f1e9; --card: #fbf7ef; --border: #e0d6c6; --muted: #8a8078; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Space Grotesk', system-ui, sans-serif; background: var(--paper); color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .shell { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
+
+  /* ── sidebar ── */
+  .side { border-right: 1px solid var(--border); padding: 22px 16px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); padding: 0 10px 18px; }
+  .brand .mark { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); display: inline-flex; align-items: center; justify-content: center; }
+  .brand .word { font-family: 'Instrument Serif', serif; font-size: 25px; line-height: 1; }
+  .side .sec { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 16px 10px 6px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; font-size: 14px; font-weight: 500; color: #574f45; text-decoration: none; cursor: pointer; }
+  .nav-item:hover { background: #efe7d8; color: var(--ink); }
+  .nav-item.on { background: var(--ink); color: #f6f1e9; }
+  .help { margin-top: auto; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; font-size: 13px; color: #574f45; }
+  .help a { color: var(--accent); font-weight: 600; text-decoration: none; }
+
+  /* ── main ── */
+  .main { padding: 22px clamp(20px,3.5vw,48px) 120px; }
+  .crumb { font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+  .crumb b { color: var(--ink); font-weight: 500; }
+  h1 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: clamp(30px,3.2vw,40px); letter-spacing: -.02em; margin: 18px 0 2px; display: flex; align-items: center; gap: 12px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
+  .tabs { display: flex; gap: 22px; border-bottom: 1.5px solid var(--border); margin-bottom: 22px; }
+  .tab { padding: 10px 2px; font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1.5px; }
+  .tab.on { color: var(--ink); border-bottom-color: var(--accent); }
+
+  .cols { display: grid; grid-template-columns: minmax(340px, 460px) 1fr; gap: 22px; align-items: start; }
+  .ability { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s, transform .15s, box-shadow .2s; }
+  .ability:hover { border-color: #c9bda9; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(20,16,14,.05); }
+  .ability.on { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent); }
+  .ability .ic { width: 34px; height: 34px; border-radius: 9px; background: #efe7d8; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ability .nm { font-size: 14.5px; font-weight: 600; }
+  .ability .ds { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .ability .tail { margin-left: auto; color: var(--muted); font-size: 18px; flex-shrink: 0; }
+  .ability .tick { color: #2fae6b; font-weight: 700; }
+  .adv-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 20px 0 10px; }
+
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 24px; min-height: 320px; position: sticky; top: 22px; }
+  .panel h3 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 24px; margin: 0 0 6px; }
+  .panel .pd { font-size: 13.5px; color: var(--muted); margin: 0 0 18px; }
+  .prow { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; border: 1px solid var(--border); background: #fff; border-radius: 13px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s; }
+  .prow:hover { border-color: #c9bda9; }
+  .prow .t { font-size: 14px; font-weight: 600; }
+  .prow .d { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  .panel textarea { width: 100%; min-height: 120px; font-family: inherit; font-size: 14px; padding: 12px 14px; border: 1.5px solid #ddd3c3; border-radius: 12px; background: #fff; color: var(--ink); resize: vertical; }
+  .panel textarea:focus { outline: none; border-color: var(--accent); }
+  .save-mini { margin-top: 10px; background: var(--ink); color: #f6f1e9; border: none; border-radius: 100px; padding: 10px 20px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  /* ── modal ── */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(20,16,14,.45); z-index: 90; align-items: center; justify-content: center; padding: 20px; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--paper); border-radius: 20px; width: min(620px, 100%); padding: 26px; box-shadow: 0 40px 90px rgba(20,16,14,.35); }
+  .modal h3 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 26px; margin: 0 0 14px; }
+  .modal textarea { width: 100%; min-height: 200px; font-family: inherit; font-size: 14px; padding: 14px 16px; border: 1.5px solid #ddd3c3; border-radius: 14px; background: #fff; resize: vertical; }
+  .modal textarea:focus { outline: none; border-color: var(--accent); }
+  .modal .row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+  .btn-ghost { background: transparent; border: 1.5px solid var(--border); color: var(--ink); border-radius: 100px; padding: 11px 22px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-ink { background: var(--ink); border: none; color: #f6f1e9; border-radius: 100px; padding: 11px 22px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+  /* ── floating test bar ── */
+  .callbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 80; display: flex; align-items: center; gap: 10px; background: var(--ink); border-radius: 100px; padding: 8px 10px; box-shadow: 0 20px 50px rgba(20,16,14,.35); }
+  .callbar select { background: #211b16; color: #ede6dc; border: 1px solid #322920; border-radius: 100px; padding: 9px 12px; font-family: inherit; font-size: 13px; font-weight: 600; }
+  .cb-ghost { background: transparent; border: 1px solid #3a2f27; color: #cfc5b6; border-radius: 100px; padding: 10px 18px; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .cb-main { background: var(--accent); border: none; color: #fff; border-radius: 100px; padding: 10px 22px; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .cb-main.live { background: #b4232a; }
+  .cb-status { color: #a79f95; font-size: 12.5px; padding: 0 4px 0 8px; }
+
+  /* live transcript card above bar */
+  .livecard { display: none; position: fixed; left: 50%; transform: translateX(-50%); bottom: 84px; z-index: 79; width: min(560px, 92vw); background: #211b16; color: #ede6dc; border-radius: 18px; padding: 16px 18px; max-height: 200px; overflow-y: auto; box-shadow: 0 24px 60px rgba(20,16,14,.4); }
+  .livecard.open { display: block; }
+  .livecard .cap { font-size: 11px; letter-spacing: .06em; color: #a79f95; margin-bottom: 8px; }
+  .livecard p { font-size: 14px; line-height: 1.5; margin: 0 0 6px; }
+
+  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #2fae6b; color: #04210f; font-weight: 600; font-size: 14px; border-radius: 100px; padding: 12px 24px; z-index: 100; box-shadow: 0 14px 34px rgba(0,0,0,.18); opacity: 0; transition: opacity .4s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  @media (max-width: 900px) { .shell { grid-template-columns: 1fr; } .side { display: none; } .cols { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <a class="brand" href="index.html">
+      <span class="mark"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+      <span class="word">Amira</span>
+    </a>
+    <div class="nav-item">Home</div>
+    <div class="sec">Contents</div>
+    <div class="nav-item on">Assistants</div>
+    <div class="nav-item">Knowledge Base</div>
+    <div class="nav-item">Phone Numbers</div>
+    <div class="nav-item">Call History</div>
+    <div class="sec">Admin</div>
+    <div class="nav-item">Payments</div>
+    <div class="nav-item">API Keys</div>
+    <div class="nav-item">Integrations</div>
+    <div class="nav-item">Users</div>
+    <div class="help">Find instructions and guides from our team here.<br><a href="#">Open documentation</a></div>
+  </aside>
+
+  <main class="main">
+    <div class="crumb">Home <span>›</span> Assistants <span>›</span> <b>Assistant detail</b></div>
+    <h1>Edit ‘Amira’ <span id="plan-chip" style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#efe7d8;color:#574f45;border-radius:100px;padding:5px 12px;"></span></h1>
+    <p class="sub" id="assist-sub">Receptionist for your business</p>
+
+    <div class="tabs">
+      <div class="tab on" data-tab="behaviour">Behaviour</div>
+      <div class="tab" data-tab="technical">Technical</div>
+    </div>
+
+    <div class="cols" id="tab-behaviour">
+      <div>
+        <div class="ability" data-key="essentials">
+          <span class="ic">✦</span>
+          <div><div class="nm">Essentials</div><div class="ds">Name, voice, language and greeting</div></div>
+          <span class="tail">›</span>
+        </div>
+        <div class="ability" data-key="answers">
+          <span class="ic">💬</span>
+          <div><div class="nm">Answer questions</div><div class="ds">FAQs from your business info</div></div>
+          <span class="tail tick">✓</span>
+        </div>
+        <div class="ability" data-key="transfer">
+          <span class="ic">↪</span>
+          <div><div class="nm">Transfer calls</div><div class="ds">Forward to your team or phone numbers</div></div>
+          <span class="tail">＋</span>
+        </div>
+        <div class="ability" data-key="email">
+          <span class="ic">✉️</span>
+          <div><div class="nm">Send email</div><div class="ds">Call summaries and custom templates</div></div>
+          <span class="tail tick">✓</span>
+        </div>
+
+        <div class="adv-label">Advanced abilities</div>
+        <div class="ability" data-key="prompt">
+          <span class="ic">📝</span>
+          <div><div class="nm">Custom prompt / instructions</div><div class="ds">Fine-tune exactly how she speaks</div></div>
+          <span class="tail">›</span>
+        </div>
+        <div class="ability" data-key="sms">
+          <span class="ic">📱</span>
+          <div><div class="nm">Send SMS</div><div class="ds">Dynamic texts to callers or fixed numbers</div></div>
+          <span class="tail">＋</span>
+        </div>
+        <div class="ability" data-key="book">
+          <span class="ic">📅</span>
+          <div><div class="nm">Book appointments</div><div class="ds">Straight into your calendar, on the call</div></div>
+          <span class="tail tick">✓</span>
+        </div>
+        <div class="ability" data-key="webhooks">
+          <span class="ic">⚙︎</span>
+          <div><div class="nm">Webhooks</div><div class="ds">Inbound and outbound API workflows</div></div>
+          <span class="tail">›</span>
+        </div>
+      </div>
+
+      <div class="panel" id="detail-panel">
+        <h3 id="p-title">Essentials</h3>
+        <p class="pd" id="p-desc">The basics of how Amira presents herself on every call.</p>
+        <div id="p-body"></div>
+      </div>
+    </div>
+
+    <div class="cols" id="tab-technical" style="display:none;">
+      <div>
+        <div class="ability"><span class="ic">🔊</span><div><div class="nm">Voice engine</div><div class="ds">Sarvam bulbul:v3 · natural Indian voices</div></div><span class="tail tick">✓</span></div>
+        <div class="ability"><span class="ic">👂</span><div><div class="nm">Speech recognition</div><div class="ds">Sarvam saaras:v3 · 11 languages, code-mix</div></div><span class="tail tick">✓</span></div>
+        <div class="ability"><span class="ic">🧠</span><div><div class="nm">Reasoning model</div><div class="ds">Low-latency LLM tuned for sales calls</div></div><span class="tail tick">✓</span></div>
+        <div class="ability"><span class="ic">🔒</span><div><div class="nm">Data &amp; privacy</div><div class="ds">Recordings and transcripts stay in your account</div></div><span class="tail">›</span></div>
+      </div>
+      <div class="panel"><h3>Technical</h3><p class="pd">Engine settings are managed for you. Talk to us for custom voice cloning, on-prem hosting, or SIP trunk configuration.</p></div>
+    </div>
+  </main>
+</div>
+
+<!-- Custom prompt modal -->
+<div class="overlay" id="prompt-overlay">
+  <div class="modal">
+    <h3>Custom prompt / instructions</h3>
+    <textarea id="prompt-text" placeholder="e.g. If someone asks about parking, tell them the entrance is behind Marina Walk and it's free for customers…"></textarea>
+    <div class="row">
+      <button class="btn-ghost" id="prompt-cancel">Cancel</button>
+      <button class="btn-ink" id="prompt-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Live transcript + call bar -->
+<div class="livecard" id="livecard">
+  <div class="cap">LIVE TRANSCRIPT</div>
+  <div id="live-lines"></div>
+</div>
+<div class="callbar">
+  <select id="test-lang">
+    <option value="en">English</option><option value="hi">हिंदी</option><option value="ta">தமிழ்</option>
+    <option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="bn">বাংলা</option>
+    <option value="mr">मराठी</option><option value="gu">ગુજરાતી</option><option value="ml">മലയാളം</option>
+    <option value="pa">ਪੰਜਾਬੀ</option><option value="od">ଓଡ଼ିଆ</option>
+  </select>
+  <button class="cb-ghost" id="assign-btn">Assign number</button>
+  <button class="cb-main" id="test-btn">Test call</button>
+  <span class="cb-status" id="cb-status"></span>
+</div>
+
+<div class="toast" id="toast"></div>
+<audio id="remoteAudio" autoplay playsinline style="display:none;"></audio>
+
+<script>
+(function () {
+  // ── guard + personalization ──────────────────────────────
+  var user = {};
+  try { user = JSON.parse(localStorage.getItem("amira_user") || "{}"); } catch (e) {}
+  if (!user.email) { location.href = "signup.html"; return; }
+  var plan = localStorage.getItem("amira_plan");
+  if (!plan) { location.href = "plan.html"; return; }
+
+  document.getElementById("plan-chip").textContent = plan + " plan";
+  if (user.business) document.getElementById("assist-sub").textContent = "Receptionist for " + user.business;
+
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(function () { t.classList.remove("show"); }, 3200);
+  }
+  if (new URLSearchParams(location.search).get("welcome")) {
+    toast("Trial started — welcome to Amira!");
+    history.replaceState(null, "", "dashboard.html");
+  }
+
+  // ── tabs ─────────────────────────────────────────────────
+  document.querySelectorAll(".tab").forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      document.querySelectorAll(".tab").forEach(function (t) { t.classList.toggle("on", t === tab); });
+      document.getElementById("tab-behaviour").style.display = tab.dataset.tab === "behaviour" ? "" : "none";
+      document.getElementById("tab-technical").style.display = tab.dataset.tab === "technical" ? "" : "none";
+    });
+  });
+
+  // ── detail panel content per ability ─────────────────────
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+  var bizName = esc(user.business || "your business");
+  var panels = {
+    essentials: { t: "Essentials", d: "The basics of how Amira presents herself on every call.",
+      b: '<div class="prow"><div><div class="t">Assistant name</div><div class="d">Amira</div></div><span>›</span></div>' +
+         '<div class="prow"><div><div class="t">Business</div><div class="d">' + bizName + '</div></div><span>›</span></div>' +
+         '<div class="prow"><div><div class="t">Voice</div><div class="d">Warm female · natural Indian accent</div></div><span>›</span></div>' +
+         '<div class="prow"><div><div class="t">Languages</div><div class="d">All 11 — auto-detected per caller</div></div><span>›</span></div>' },
+    answers: { t: "Answer questions", d: "Amira answers FAQs from the business info you give her.",
+      b: '<div class="prow"><div><div class="t">Company information</div><div class="d">Hours, location, services, prices</div></div><span>›</span></div>' +
+         '<div class="prow"><div><div class="t">Additional documents (PDFs)</div><div class="d">Menus, price lists, T&amp;Cs</div></div><span>›</span></div>' +
+         '<div class="prow"><div><div class="t">Web search</div><div class="d">Not enabled</div></div><span>＋</span></div>' +
+         '<label style="display:block;font-size:13px;font-weight:600;color:#574f45;margin:16px 0 7px;">Quick company info</label>' +
+         '<textarea id="company-info" placeholder="Opening hours, address, popular services…"></textarea>' +
+         '<button class="save-mini" id="save-info">Save</button>' },
+    transfer: { t: "Transfer calls", d: "Warm-transfer to the right person when a human is needed.",
+      b: '<div class="prow"><div><div class="t">Add transfer target</div><div class="d">Name + phone number, e.g. “Owner — +91 98…”</div></div><span>＋</span></div>' },
+    email: { t: "Send email", d: "A clean summary in your inbox the moment each call ends.",
+      b: '<div class="prow"><div><div class="t">Summary recipient</div><div class="d">' + esc(user.email || "you@business.com") + '</div></div><span>›</span></div>' +
+         '<div class="prow"><div><div class="t">Template</div><div class="d">New booking · caller details · next steps</div></div><span>›</span></div>' },
+    sms: { t: "Send SMS", d: "Text confirmations and follow-ups to callers automatically.",
+      b: '<div class="prow"><div><div class="t">Booking confirmation SMS</div><div class="d">Available on Growth and Scale</div></div><span>＋</span></div>' },
+    book: { t: "Book appointments", d: "Amira offers real slots and confirms on the call.",
+      b: '<div class="prow"><div><div class="t">Google Calendar</div><div class="d">Connected</div></div><span class="tail" style="color:#2fae6b;font-weight:700;">✓</span></div>' +
+         '<div class="prow"><div><div class="t">Booking rules</div><div class="d">Up to 30 days ahead · groups of 8+ get a callback</div></div><span>›</span></div>' },
+    webhooks: { t: "Webhooks", d: "Fire your own API calls when things happen on a call.",
+      b: '<div class="prow"><div><div class="t">Inbound webhook</div><div class="d">Trigger Amira from your systems</div></div><span>›</span></div>' +
+         '<div class="prow"><div><div class="t">Outbound API</div><div class="d">POST call data to your endpoint</div></div><span>›</span></div>' +
+         '<div class="prow"><div><div class="t">n8n integration</div><div class="d">Post-call logging workflow</div></div><span>›</span></div>' }
+  };
+
+  var abilities = document.querySelectorAll('#tab-behaviour .ability');
+  function openPanel(key) {
+    abilities.forEach(function (a) { a.classList.toggle("on", a.dataset.key === key); });
+    if (key === "prompt") { document.getElementById("prompt-overlay").classList.add("open"); return; }
+    var p = panels[key];
+    if (!p) return;
+    document.getElementById("p-title").textContent = p.t;
+    document.getElementById("p-desc").textContent = p.d;
+    document.getElementById("p-body").innerHTML = p.b;
+    var save = document.getElementById("save-info");
+    if (save) {
+      var box = document.getElementById("company-info");
+      box.value = localStorage.getItem("amira_company_info") || "";
+      save.addEventListener("click", function () {
+        localStorage.setItem("amira_company_info", box.value);
+        toast("Company info saved");
+      });
+    }
+  }
+  abilities.forEach(function (a) { a.addEventListener("click", function () { openPanel(a.dataset.key); }); });
+  openPanel("essentials");
+
+  // ── custom prompt modal ──────────────────────────────────
+  var overlay = document.getElementById("prompt-overlay");
+  var promptBox = document.getElementById("prompt-text");
+  promptBox.value = localStorage.getItem("amira_custom_prompt") || "";
+  document.getElementById("prompt-cancel").addEventListener("click", function () { overlay.classList.remove("open"); });
+  overlay.addEventListener("click", function (e) { if (e.target === overlay) overlay.classList.remove("open"); });
+  document.getElementById("prompt-save").addEventListener("click", function () {
+    localStorage.setItem("amira_custom_prompt", promptBox.value);
+    overlay.classList.remove("open");
+    toast("Custom instructions saved");
+  });
+
+  document.getElementById("assign-btn").addEventListener("click", function () {
+    toast("Phone numbers arrive with the telephony rollout — coming soon");
+  });
+
+  // ── real test call (n8n → pipecat, same flow as the landing demo) ──
+  var START_WEBHOOK_URL = "http://localhost:5678/webhook/amira-start";
+  var PIPECAT_BASE_URL = "http://localhost:8000";
+  var testBtn = document.getElementById("test-btn");
+  var status = document.getElementById("cb-status");
+  var livecard = document.getElementById("livecard");
+  var liveLines = document.getElementById("live-lines");
+  var remoteAudio = document.getElementById("remoteAudio");
+  var pc = null, micStream = null, live = false, connecting = false;
+  var partialEls = { user: null, bot: null };
+
+  function addLine(speaker, text, partial) {
+    var slot = partialEls[speaker];
+    if (!slot) {
+      var p = document.createElement("p");
+      var label = document.createElement("span");
+      label.style.cssText = "font-weight:600;color:" + (speaker === "bot" ? "var(--accent)" : "#a3d9a5") + ";";
+      label.textContent = speaker === "bot" ? "Amira: " : "You: ";
+      var body = document.createElement("span");
+      p.appendChild(label); p.appendChild(body);
+      liveLines.appendChild(p);
+      slot = partialEls[speaker] = body;
+    }
+    slot.textContent = text;
+    slot.style.opacity = partial ? ".65" : "1";
+    if (!partial) partialEls[speaker] = null;
+    livecard.scrollTop = livecard.scrollHeight;
+  }
+
+  function handleRTVI(raw) {
+    var msg; try { msg = JSON.parse(raw); } catch (e) { return; }
+    if (msg.label !== "rtvi-ai") return;
+    var d = msg.data || {};
+    if (msg.type === "user-transcription" && d.text && d.text.trim()) addLine("user", d.text.trim(), !d.final);
+    if (msg.type === "bot-transcription" && d.text && d.text.trim()) addLine("bot", d.text.trim(), false);
+  }
+
+  function setLive(on) {
+    live = on;
+    testBtn.textContent = on ? "End call" : "Test call";
+    testBtn.classList.toggle("live", on);
+    status.textContent = on ? "on a test call" : "";
+    livecard.classList.toggle("open", on);
+    if (!on) { liveLines.innerHTML = ""; partialEls = { user: null, bot: null }; }
+  }
+
+  function cleanup() {
+    if (micStream) micStream.getTracks().forEach(function (t) { t.stop(); });
+    if (pc) pc.close();
+    pc = micStream = null;
+    connecting = false;
+    setLive(false);
+  }
+
+  function waitIce(pc) {
+    if (pc.iceGatheringState === "complete") return Promise.resolve();
+    return new Promise(function (res) {
+      function check() { if (pc.iceGatheringState === "complete") { pc.removeEventListener("icegatheringstatechange", check); res(); } }
+      pc.addEventListener("icegatheringstatechange", check);
+      setTimeout(res, 2000);
+    });
+  }
+
+  async function startTest() {
+    connecting = true;
+    testBtn.disabled = true;
+    status.textContent = "connecting…";
+    try {
+      var startRes = await fetch(START_WEBHOOK_URL, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: user.business || "Dashboard test" })
+      });
+      var session = await startRes.json();
+      if (!startRes.ok || !session.success) throw new Error("session failed");
+
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+      pc = new RTCPeerConnection({ iceServers: session.iceConfig.iceServers });
+      var dc = pc.createDataChannel("pipecat-ai");
+      dc.onmessage = function (e) { handleRTVI(e.data); };
+      micStream.getTracks().forEach(function (t) { pc.addTrack(t, micStream); });
+      pc.ontrack = function (e) { remoteAudio.srcObject = e.streams[0]; remoteAudio.play().catch(function () {}); };
+      pc.onconnectionstatechange = function () {
+        if (live && ["failed", "disconnected", "closed"].indexOf(pc && pc.connectionState) >= 0) cleanup();
+      };
+
+      var offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await waitIce(pc);
+      var offerRes = await fetch(PIPECAT_BASE_URL + "/sessions/" + session.sessionId + "/api/offer", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sdp: pc.localDescription.sdp, type: pc.localDescription.type, language: document.getElementById("test-lang").value })
+      });
+      if (!offerRes.ok) throw new Error("offer failed");
+      await pc.setRemoteDescription(await offerRes.json());
+      setLive(true);
+    } catch (err) {
+      console.error("Test call error:", err);
+      cleanup();
+      status.textContent = "couldn't connect — is the server running?";
+      setTimeout(function () { if (!live) status.textContent = ""; }, 4000);
+    } finally {
+      connecting = false;
+      testBtn.disabled = false;
+    }
+  }
+
+  testBtn.addEventListener("click", function () {
+    if (live) { cleanup(); return; }
+    if (!connecting) startTest();
+  });
+})();
+</script>
+</body>
+</html>

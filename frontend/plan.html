@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choose your plan — Amira</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --accent: #ef5b2b; --ink: #17130f; --paper: #f6f1e9; --card: #fbf7ef; --border: #e0d6c6; --muted: #8a8078; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Space Grotesk', system-ui, sans-serif; background: var(--paper); color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .top { display: flex; align-items: center; justify-content: space-between; padding: 24px clamp(20px,5vw,72px); }
+  .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+  .brand .mark { width: 30px; height: 30px; border-radius: 9px; background: var(--accent); display: inline-flex; align-items: center; justify-content: center; }
+  .brand .word { font-family: 'Instrument Serif', serif; font-size: 28px; line-height: 1; }
+  .steps { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .steps .on { color: var(--ink); }
+  .steps .dot { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+  .steps .dot.done { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: clamp(20px,4vw,44px) clamp(20px,5vw,72px) 80px; text-align: center; }
+  h1 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: clamp(38px,4.6vw,58px); letter-spacing: -.02em; margin: 0 0 10px; }
+  .sub { color: #6b6156; font-size: 16px; margin: 0 auto 44px; max-width: 46ch; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; text-align: left; }
+  .plan { background: var(--card); border: 1.5px solid var(--border); border-radius: 24px; padding: 30px; cursor: pointer; transition: transform .25s, box-shadow .25s, border-color .2s; position: relative; }
+  .plan:hover { transform: translateY(-5px); box-shadow: 0 24px 50px rgba(20,16,14,.10); }
+  .plan.sel { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent), 0 24px 50px rgba(20,16,14,.10); }
+  .plan .tier { font-size: 14px; font-weight: 600; color: #6b6156; }
+  .plan .amt { display: flex; align-items: baseline; gap: 6px; margin: 14px 0 4px; }
+  .plan .amt .n { font-family: 'Instrument Serif', serif; font-size: 46px; line-height: 1; }
+  .plan .amt .per { color: var(--muted); font-size: 15px; }
+  .plan .blurb { font-size: 14px; color: #6b6156; margin: 0 0 18px; }
+  .plan ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .plan li { display: flex; gap: 9px; font-size: 14px; color: #3a332d; align-items: flex-start; }
+  .plan li svg { flex-shrink: 0; margin-top: 2px; }
+  .badge { position: absolute; top: 18px; right: 18px; font-size: 11px; font-weight: 700; background: var(--accent); color: #fff; border-radius: 100px; padding: 5px 11px; letter-spacing: .03em; }
+  .dark { background: var(--ink); color: #f6f1e9; border-color: var(--ink); }
+  .dark .tier { color: #b3ab9f; } .dark .blurb { color: #b3ab9f; } .dark li { color: #ede6dc; } .dark .amt .per { color: #a79f95; }
+  .cta { margin-top: 36px; background: var(--accent); color: #fff; border: none; border-radius: 100px; padding: 17px 42px; font-family: inherit; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform .2s, box-shadow .2s, opacity .2s; }
+  .cta:hover { transform: translateY(-2px); box-shadow: 0 14px 30px color-mix(in srgb, var(--accent) 40%, transparent); }
+  .cta:disabled { opacity: .5; cursor: default; transform: none; box-shadow: none; }
+  .note { font-size: 13px; color: var(--muted); margin-top: 16px; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="top">
+  <a class="brand" href="index.html">
+    <span class="mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+    <span class="word">Amira</span>
+  </a>
+  <div class="steps">
+    <span class="dot done">✓</span><span>Account</span>
+    <span style="width:26px;height:1.5px;background:var(--border);"></span>
+    <span class="dot" style="border-color:var(--accent);color:var(--accent);">2</span><span class="on">Plan</span>
+    <span style="width:26px;height:1.5px;background:var(--border);"></span>
+    <span class="dot">3</span><span>Set up</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <h1 id="hello">Choose your plan</h1>
+  <p class="sub">Start free for 7 days on any plan. No setup fees, cancel anytime — your receptionist starts answering today.</p>
+
+  <div class="grid">
+    <div class="plan" data-plan="starter">
+      <div class="tier">Starter</div>
+      <div class="amt"><span class="n">₹1,999</span><span class="per">/mo</span></div>
+      <p class="blurb">For solo owners who can't keep missing calls.</p>
+      <ul>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef5b2b" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>1 phone assistant</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef5b2b" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>200 call minutes / mo</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef5b2b" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Email summaries</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef5b2b" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Calendar sync</li>
+      </ul>
+    </div>
+
+    <div class="plan dark" data-plan="growth">
+      <span class="badge">Most popular</span>
+      <div class="tier">Growth</div>
+      <div class="amt"><span class="n">₹3,999</span><span class="per">/mo</span></div>
+      <p class="blurb">For busy teams that live and die by the phone.</p>
+      <ul>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef5b2b" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>5 phone assistants</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef5b2b" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>1,500 call minutes / mo</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef5b2b" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>CRM &amp; calendar integrations</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef5b2b" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Warm call transfers</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef5b2b" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Priority support</li>
+      </ul>
+    </div>
+
+    <div class="plan" data-plan="scale">
+      <div class="tier">Scale</div>
+      <div class="amt"><span class="n">Custom</span></div>
+      <p class="blurb">For multi-location businesses and call centers.</p>
+      <ul>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef5b2b" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Unlimited assistants</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef5b2b" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Volume call pricing</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef5b2b" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Custom integrations &amp; API</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef5b2b" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Dedicated manager</li>
+      </ul>
+    </div>
+  </div>
+
+  <button class="cta" id="continue-btn" disabled>Select a plan to continue</button>
+  <p class="note">7-day free trial · No credit card needed today</p>
+</div>
+
+<script>
+(function () {
+  var user = {};
+  try { user = JSON.parse(localStorage.getItem("amira_user") || "{}"); } catch (e) {}
+  if (!user.email) { location.href = "signup.html"; return; }
+  if (user.business) {
+    document.getElementById("hello").textContent = "Choose a plan for " + user.business;
+  }
+
+  var selected = new URLSearchParams(location.search).get("plan") || "";
+  var btn = document.getElementById("continue-btn");
+  var plans = document.querySelectorAll(".plan");
+
+  function renderSel() {
+    plans.forEach(function (p) { p.classList.toggle("sel", p.dataset.plan === selected); });
+    if (selected) {
+      btn.disabled = false;
+      btn.textContent = selected === "scale" ? "Talk to sales & set up" : "Start 7-day free trial";
+    }
+  }
+  plans.forEach(function (p) {
+    p.addEventListener("click", function () { selected = p.dataset.plan; renderSel(); });
+  });
+  renderSel();
+
+  btn.addEventListener("click", function () {
+    if (!selected) return;
+    localStorage.setItem("amira_plan", selected);
+    location.href = "dashboard.html?welcome=1";
+  });
+})();
+</script>
+</body>
+</html>
