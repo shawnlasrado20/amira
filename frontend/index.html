@@ -15,12 +15,10 @@
   @keyframes eq { 0%,100% { transform: scaleY(.22) } 50% { transform: scaleY(1) } }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent,#ef5b2b) 45%, transparent) } 70% { box-shadow: 0 0 0 18px transparent } 100% { box-shadow: 0 0 0 0 transparent } }
   @keyframes floaty { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
-  @keyframes picker-in { from { opacity:0; transform: translateY(-6px) } to { opacity:1; transform: translateY(0) } }
-  #lang-picker { animation: picker-in .18s ease; }
-  .lang-opt { border: 1.5px solid #2e2521 !important; background: #211b16 !important; color: #ede6dc; border-radius: 12px; padding: 11px 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: border-color .15s, background .15s; }
-  .lang-opt:hover { border-color: var(--accent,#ef5b2b) !important; background: #2a1f18 !important; }
-  #lang-cancel { border: 1.5px solid #2e2521; background: transparent; color: #8a8078; border-radius: 12px; padding: 11px 8px; font-size: 12px; font-weight: 500; cursor: pointer; font-family: inherit; transition: color .15s, border-color .15s; }
-  #lang-cancel:hover { color: #ede6dc; border-color: #5a5048; }
+  .lang-chip { border: 1.5px solid #d9d0c2; background: transparent; color: #574f45; border-radius: 100px; padding: 8px 15px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; line-height: 1; transition: border-color .18s, background .18s, color .18s, transform .18s; }
+  .lang-chip:hover { border-color: #171310; color: #171310; transform: translateY(-1px); }
+  .lang-chip.sel { background: #17130f; border-color: #17130f; color: #f6f1e9; }
+  .lang-chip:disabled { opacity: .45; cursor: default; transform: none; }
   .am-link { position: relative; text-decoration: none; }
   .am-link::after { content:''; position:absolute; left:0; bottom:-3px; height:1.5px; width:0; background: currentColor; transition: width .25s ease; }
   .am-link:hover::after { width:100%; }
@@ -80,29 +78,24 @@
         <button id="talk-btn" class="am-cta am-accent" style="border: none; cursor: pointer; font-family: inherit; background: var(--accent,#ef5b2b); color: #fff; border-radius: 100px; padding: 18px 34px; font-size: 17px; font-weight: 600;">🎙️ Talk to Amira live</button>
         <button id="mute-btn" style="display:none; border: 1.5px solid #cfc5b6; cursor: pointer; font-family: inherit; background: transparent; color: #171310; border-radius: 100px; padding: 16px 24px; font-size: 16px; font-weight: 600;">Mute</button>
         <a href="#pricing" class="am-link" style="align-self: center; color: #574f45; font-size: 16px; font-weight: 500; margin-left: 10px;">See pricing</a>
-      <!-- Language picker — appears when "Talk to Amira live" is clicked -->
-      <div id="lang-picker" style="display:none; position:absolute; top:calc(100% + 12px); left:0; z-index:60; width:min(400px, 92vw); background:#17130f; border:1px solid #2e2521; border-radius:18px; padding:18px 20px; box-shadow: 0 26px 70px rgba(20,16,14,.4);">
-        <div style="font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:#a79f95; margin-bottom:12px; font-weight:600;">Choose language to talk in</div>
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">
-          <button class="lang-opt" data-lang="en">English</button>
-          <button class="lang-opt" data-lang="hi"><span style="font-size:15px;display:block;margin-bottom:2px;">हिंदी</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Hindi</span></button>
-          <button class="lang-opt" data-lang="ta"><span style="font-size:15px;display:block;margin-bottom:2px;">தமிழ்</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Tamil</span></button>
-          <button class="lang-opt" data-lang="te"><span style="font-size:15px;display:block;margin-bottom:2px;">తెలుగు</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Telugu</span></button>
-          <button class="lang-opt" data-lang="kn"><span style="font-size:15px;display:block;margin-bottom:2px;">ಕನ್ನಡ</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Kannada</span></button>
-          <button class="lang-opt" data-lang="bn"><span style="font-size:15px;display:block;margin-bottom:2px;">বাংলা</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Bengali</span></button>
-          <button class="lang-opt" data-lang="mr"><span style="font-size:15px;display:block;margin-bottom:2px;">मराठी</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Marathi</span></button>
-          <button class="lang-opt" data-lang="gu"><span style="font-size:15px;display:block;margin-bottom:2px;">ગુજરાતી</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Gujarati</span></button>
-          <button class="lang-opt" data-lang="ml"><span style="font-size:15px;display:block;margin-bottom:2px;">മലയാളം</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Malayalam</span></button>
-          <button class="lang-opt" data-lang="pa"><span style="font-size:15px;display:block;margin-bottom:2px;">ਪੰਜਾਬੀ</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Punjabi</span></button>
-          <button class="lang-opt" data-lang="od"><span style="font-size:15px;display:block;margin-bottom:2px;">ଓଡ଼ିଆ</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Odia</span></button>
-          <button id="lang-cancel">Cancel</button>
-        </div>
-      </div>
       </div>
 
       <audio id="remoteAudio" autoplay playsinline style="display: none;"></audio>
-      <div style="display: flex; align-items: center; gap: 10px; margin-top: 26px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #8a8078;">
-        <span>1-ring pickup</span><span style="color:#cfc5b6;">·</span><span>24/7</span><span style="color:#cfc5b6;">·</span><span>11 languages</span><span style="color:#cfc5b6;">·</span><span>No credit card</span>
+      <div style="margin-top: 26px;">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #8a8078; margin-bottom: 10px;">She speaks your language</div>
+        <div id="lang-chips" style="display: flex; flex-wrap: wrap; gap: 8px; max-width: 620px;">
+          <button class="lang-chip sel" data-lang="en">English</button>
+          <button class="lang-chip" data-lang="hi">हिंदी</button>
+          <button class="lang-chip" data-lang="ta">தமிழ்</button>
+          <button class="lang-chip" data-lang="te">తెలుగు</button>
+          <button class="lang-chip" data-lang="kn">ಕನ್ನಡ</button>
+          <button class="lang-chip" data-lang="bn">বাংলা</button>
+          <button class="lang-chip" data-lang="mr">मराठी</button>
+          <button class="lang-chip" data-lang="gu">ગુજરાતી</button>
+          <button class="lang-chip" data-lang="ml">മലയാളം</button>
+          <button class="lang-chip" data-lang="pa">ਪੰਜਾਬੀ</button>
+          <button class="lang-chip" data-lang="od">ଓଡ଼ିଆ</button>
+        </div>
       </div>
     </div>
 
@@ -424,11 +417,10 @@
     const transcriptPlaceholder = document.getElementById("transcript-placeholder");
     const transcriptBox = document.getElementById("transcript-box");
 
-    const langPicker = document.getElementById("lang-picker");
-
     let pc = null, dc = null, micStream = null, timerInterval = null, live = false;
     let partialUserEl = null, partialBotEl = null;
-    let pickerVisible = false;
+    let selectedLang = "en";
+    const langChips = document.querySelectorAll("#lang-chips .lang-chip");
 
     // ── Transcript rendering ──────────────────────────────────────────────────
     function clearTranscript() {
@@ -517,13 +509,8 @@
     }
     setWaveform(false);
 
-    function showPicker(show) {
-      pickerVisible = show;
-      langPicker.style.display = show ? "block" : "none";
-      if (show) {
-        talkBtn.textContent = "Picking language…";
-        talkBtn.disabled = false;
-      }
+    function setChipsEnabled(on) {
+      langChips.forEach((c) => { c.disabled = !on; });
     }
 
     let muted = false;
@@ -539,7 +526,7 @@
 
     function setLiveUI(on) {
       live = on;
-      showPicker(false);
+      setChipsEnabled(!on);
       if (on) {
         talkBtn.textContent = "🔴 End call";
         muteBtn.style.display = "inline-flex";
@@ -558,7 +545,7 @@
         }, 1000);
         clearTranscript();
       } else {
-        talkBtn.textContent = "Talk to Amira live";
+        talkBtn.textContent = "🎙️ Talk to Amira live";
         muteBtn.style.display = "none";
         liveBadge.textContent = "STANDBY";
         liveBadge.style.color = "#a79f95";
@@ -651,7 +638,7 @@
         console.error("Voice session error:", err);
         cleanup();
         talkBtn.textContent = "Couldn't connect — try again";
-        setTimeout(() => { if (!live) talkBtn.textContent = "Talk to Amira live"; }, 4000);
+        setTimeout(() => { if (!live) talkBtn.textContent = "🎙️ Talk to Amira live"; }, 4000);
       } finally {
         connecting = false;
       }
@@ -660,17 +647,15 @@
     talkBtn.addEventListener("click", () => {
       if (live) { cleanup(); return; }
       if (talkBtn.disabled) return;
-      if (pickerVisible) { showPicker(false); talkBtn.textContent = "Talk to Amira live"; return; }
-      showPicker(true);
+      startCall(selectedLang);
     });
 
-    document.querySelectorAll("#lang-picker [data-lang]").forEach((btn) => {
-      btn.addEventListener("click", () => startCall(btn.dataset.lang));
-    });
-
-    document.getElementById("lang-cancel").addEventListener("click", () => {
-      showPicker(false);
-      talkBtn.textContent = "Talk to Amira live";
+    langChips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        if (chip.disabled) return;
+        selectedLang = chip.dataset.lang;
+        langChips.forEach((c) => c.classList.toggle("sel", c === chip));
+      });
     });
 
     // Booking form: front-end only for now, give friendly feedback
