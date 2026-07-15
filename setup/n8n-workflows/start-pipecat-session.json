@@ -1,7 +1,7 @@
 {
   "name": "AMIRA - Start Pipecat Session",
-  "active": true,
-  "versionId": "a1b2c3d4-e5f6-4a00-8a00-000000000010",
+  "active": false,
+  "versionId": "be548c3d-8fd3-4604-8231-97d1806a5fff",
   "nodes": [
     {
       "parameters": {
@@ -25,7 +25,7 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const body = $input.first().json.body || {};\nconst callerName = (body.name || '').toString().trim();\n\n// Pipecat's /start returns iceConfig only when enableDefaultIceServers is set.\n// callerName is stored on the session server-side (active_sessions) for future use.\nreturn [{\n  json: {\n    enableDefaultIceServers: true,\n    body: { callerName }\n  }\n}];"
+        "jsCode": "const body = $input.first().json.body || {};\nconst callerName = (body.name || '').toString().trim();\nconst language = (body.language || 'en').toString().trim();\nconst assistantConfig = body.assistantConfig && typeof body.assistantConfig === 'object' ? body.assistantConfig : null;\n\n// n8n is the session boundary: it forwards only the fields the voice server accepts.\nreturn [{\n  json: {\n    enableDefaultIceServers: true,\n    body: { callerName, language, assistantConfig }\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -133,6 +133,5 @@
   },
   "settings": {
     "executionOrder": "v1"
-  },
-  "id": "Isyq6CiuDBePRdOY"
+  }
 }

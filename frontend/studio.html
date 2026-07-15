@@ -122,7 +122,8 @@
   .action-bar .assign { font-size: 13px; color: var(--faint); cursor: not-allowed; }
   .btn { border: none; border-radius: 999px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; }
   .btn-gen { background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #04121a; }
-  .btn-test { background: var(--border); color: var(--faint); cursor: not-allowed; }
+  .btn-test { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+  .btn-test.live { background: #3a1717; color: #ffb4b4; border-color: #733; }
 
   /* modal */
   .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 200; padding: 24px; }
@@ -175,7 +176,7 @@
       <div class="crumbs"><span>Home</span><span class="sep">›</span><span>Assistants</span><span class="sep">›</span><b id="crumb-last">Assistant Detail</b></div>
       <div class="topbar-right"><a class="exit" href="index.html">Exit to site</a><div class="avatar">MS</div></div>
     </div>
-    <div class="banner">✎ Draft mode — fill in the forms and click <b>Generate config</b> to produce the output JSON. Nothing is sent to the voicebot yet (no charges).</div>
+    <div class="banner">Prototype mode — your draft stays in this browser. <b>Test in browser</b> sends it through n8n to a temporary voice session.</div>
 
     <div class="content">
 
@@ -203,6 +204,13 @@
             <div class="essentials apanel active" id="panel-essentials">
               <div class="essentials-head"><h2>Essentials</h2></div>
               <div class="field"><label>Name</label><input class="control" id="f-name" value="Amira" /></div>
+              <div class="row-2">
+                <div class="field"><label>Company name</label><input class="control" id="f-company" value="Saffron House" /></div>
+                <div class="field"><label>Business type</label><input class="control" id="f-industry" value="Restaurant" placeholder="Clinic, salon, property agency…" /></div>
+              </div>
+              <div class="field"><label>Website</label><input class="control" id="f-website" placeholder="https://yourcompany.com" /></div>
+              <div class="field"><label>Location &amp; opening hours</label><textarea class="control" id="f-hours">Dubai Marina. Open daily: lunch 12–3pm and dinner 6–11pm.</textarea></div>
+              <div class="field"><label>Services, policies &amp; important facts</label><textarea class="control" id="f-services" style="min-height:120px;">North Indian dining, table reservations, vegan and gluten-free options. Confirm every reservation by repeating the date, time, party size and caller name.</textarea></div>
               <div class="field">
                 <div class="field-head"><label>Start Message</label><div class="toggle-wrap"><span>Prevent Interruption</span><span class="toggle" id="t-prevent"></span></div></div>
                 <textarea class="control" id="f-startmsg">Thank you for calling Saffron House! This is Amira, how can I help you today?</textarea>
@@ -212,7 +220,7 @@
                   <select class="control" id="f-voice"><option>Amira (Gold)</option><option>Olivia</option><option>Holly</option><option>Aaron</option></select>
                 </div>
                 <div class="field"><label>Language</label>
-                  <select class="control" id="f-language"><option>English</option><option>Hindi</option><option>Arabic</option></select>
+                  <select class="control" id="f-language"><option value="en">English</option><option value="hi">Hindi</option><option value="ta">Tamil</option><option value="te">Telugu</option><option value="kn">Kannada</option><option value="bn">Bengali</option><option value="mr">Marathi</option><option value="gu">Gujarati</option><option value="ml">Malayalam</option><option value="pa">Punjabi</option><option value="od">Odia</option></select>
                 </div>
               </div>
             </div>
@@ -352,9 +360,11 @@ Be concise (1–2 sentences), human and upbeat, confirm bookings before ending, 
 
 <div class="action-bar" id="actionBar">
   <span class="assign">⊕ Assign Number</span>
-  <button class="btn btn-test" title="Disabled in preview — no calls, no charges" disabled>🎧 Test call</button>
+  <button class="btn btn-test" id="testBtn" title="Start a browser voice test with this configuration">Test in browser</button>
   <button class="btn btn-gen" id="genBtn">⚙︎ Generate config</button>
 </div>
+
+<audio id="studioRemoteAudio" autoplay></audio>
 
 <!-- Output modal -->
 <div class="modal-bg" id="modalBg">
@@ -405,7 +415,7 @@ Be concise (1–2 sentences), human and upbeat, confirm bookings before ending, 
   document.querySelectorAll(".chk .box").forEach(b => b.addEventListener("click", () => b.classList.toggle("off")));
 
   // ---- Knowledge base uploads ----
-  const kbDocs = [];
+  let kbDocs = [];
   const kbList = document.getElementById("kb-list");
   const kbFile = document.getElementById("kb-file");
   const dropzone = document.getElementById("dropzone");
@@ -451,6 +461,13 @@ Be concise (1–2 sentences), human and upbeat, confirm bookings before ending, 
 
   function buildConfig(){
     return {
+      company: {
+        name: val("f-company"),
+        industry: val("f-industry"),
+        website: val("f-website"),
+        locationHours: val("f-hours"),
+        servicesPolicies: val("f-services")
+      },
       assistant: {
         name: val("f-name"),
         firstMessage: val("f-startmsg"),
@@ -476,7 +493,9 @@ Be concise (1–2 sentences), human and upbeat, confirm bookings before ending, 
   const outJson = document.getElementById("out-json");
   let lastConfig = "";
   document.getElementById("genBtn").addEventListener("click", () => {
-    lastConfig = JSON.stringify(buildConfig(), null, 2);
+    const config = buildConfig();
+    localStorage.setItem("amiraStudioConfig", JSON.stringify(config));
+    lastConfig = JSON.stringify(config, null, 2);
     outJson.textContent = lastConfig;
     modalBg.classList.add("open");
   });
@@ -490,6 +509,73 @@ Be concise (1–2 sentences), human and upbeat, confirm bookings before ending, 
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = "amira-config.json"; a.click();
     URL.revokeObjectURL(a.href);
+  });
+
+  // Browser-local persistence for this prototype. Production storage will move behind auth.
+  const FIELD_MAP = {
+    "f-company":"company.name", "f-industry":"company.industry", "f-website":"company.website",
+    "f-hours":"company.locationHours", "f-services":"company.servicesPolicies",
+    "f-name":"assistant.name", "f-startmsg":"assistant.firstMessage", "f-voice":"assistant.voice",
+    "f-language":"assistant.language", "f-prompt":"assistant.systemPrompt",
+    "f-answer-source":"abilities.answerQuestions.knowledgeSource", "f-answer-faqs":"abilities.answerQuestions.qa"
+  };
+  const getPath = (obj, path) => path.split(".").reduce((v,k) => v && v[k], obj);
+  try {
+    const saved = JSON.parse(localStorage.getItem("amiraStudioConfig") || "null");
+    if(saved){
+      Object.entries(FIELD_MAP).forEach(([id,path]) => {
+        const el=document.getElementById(id), value=getPath(saved,path);
+        if(el && value != null) el.value=value;
+      });
+      kbDocs = Array.isArray(saved.knowledgeBase) ? saved.knowledgeBase : [];
+      renderDocs();
+    }
+  } catch(_) {}
+
+  // Live test path: Studio config -> n8n -> Pipecat session -> browser WebRTC.
+  const START_WEBHOOK_URL = "http://localhost:5678/webhook/amira-start";
+  const PIPECAT_BASE_URL = "http://localhost:8000";
+  const testBtn = document.getElementById("testBtn");
+  const studioAudio = document.getElementById("studioRemoteAudio");
+  let testPc=null, testStream=null, testDc=null, testLive=false;
+
+  function stopTest(){
+    if(testStream) testStream.getTracks().forEach(t=>t.stop());
+    if(testDc) try{testDc.close()}catch(_){}
+    if(testPc) testPc.close();
+    testPc=testStream=testDc=null; testLive=false;
+    testBtn.textContent="Test in browser"; testBtn.classList.remove("live");
+  }
+  function waitForIce(pc){
+    if(pc.iceGatheringState==="complete") return Promise.resolve();
+    return new Promise(resolve=>{
+      const done=()=>{if(pc.iceGatheringState==="complete"){pc.removeEventListener("icegatheringstatechange",done);resolve();}};
+      pc.addEventListener("icegatheringstatechange",done); setTimeout(resolve,2000);
+    });
+  }
+  testBtn.addEventListener("click", async()=>{
+    if(testLive){stopTest();return;}
+    const config=buildConfig();
+    localStorage.setItem("amiraStudioConfig",JSON.stringify(config));
+    testBtn.disabled=true; testBtn.textContent="Connecting…";
+    try{
+      const language=config.assistant.language || "en";
+      const sr=await fetch(START_WEBHOOK_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:"Studio test",language,assistantConfig:config})});
+      const session=await sr.json();
+      if(!sr.ok || !session.success) throw new Error(session.details || "Session could not start");
+      testStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}});
+      testPc=new RTCPeerConnection({iceServers:session.iceConfig.iceServers});
+      testDc=testPc.createDataChannel("pipecat-ai");
+      testStream.getTracks().forEach(t=>testPc.addTrack(t,testStream));
+      testPc.ontrack=e=>{studioAudio.srcObject=e.streams[0];studioAudio.play().catch(()=>{});};
+      testPc.onconnectionstatechange=()=>{if(["failed","disconnected","closed"].includes(testPc?.connectionState))stopTest();};
+      await testPc.setLocalDescription(await testPc.createOffer()); await waitForIce(testPc);
+      const or=await fetch(`${PIPECAT_BASE_URL}/sessions/${session.sessionId}/api/offer`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sdp:testPc.localDescription.sdp,type:testPc.localDescription.type,language})});
+      if(!or.ok) throw new Error("Voice connection failed");
+      await testPc.setRemoteDescription(await or.json());
+      testLive=true; testBtn.textContent="End test call"; testBtn.classList.add("live");
+    }catch(err){ console.error(err); stopTest(); alert(`Could not start the test call: ${err.message}`); }
+    finally{testBtn.disabled=false;}
   });
 </script>
 

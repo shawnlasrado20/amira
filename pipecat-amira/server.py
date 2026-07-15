@@ -305,7 +305,11 @@ async def start_session(request: Request):
 # ---------------------------------------------------------------------------
 # WebRTC offer handling
 # ---------------------------------------------------------------------------
-async def _handle_offer(request_data: dict, background_tasks: BackgroundTasks):
+async def _handle_offer(
+    request_data: dict,
+    background_tasks: BackgroundTasks,
+    session_data: dict | None = None,
+):
     pc_id = request_data.get("pc_id")
 
     if pc_id and pc_id in pcs_map:
@@ -320,7 +324,9 @@ async def _handle_offer(request_data: dict, background_tasks: BackgroundTasks):
         connection = SmallWebRTCConnection(ice_servers)
         await connection.initialize(sdp=request_data["sdp"], type=request_data["type"])
 
-        language = request_data.get("language", "hi")
+        session_data = session_data or {}
+        language = request_data.get("language") or session_data.get("language", "hi")
+        assistant_config = session_data.get("assistantConfig") or request_data.get("assistantConfig")
 
         session_entry: dict[str, float | None] = {
             "start_time": time.time(),
@@ -346,7 +352,7 @@ async def _handle_offer(request_data: dict, background_tasks: BackgroundTasks):
                 audio_out_enabled=True,
             ),
         )
-        background_tasks.add_task(bot.run_bot, transport, language)
+        background_tasks.add_task(bot.run_bot, transport, language, assistant_config)
 
     answer = connection.get_answer()
     pcs_map[answer["pc_id"]] = connection
@@ -375,7 +381,11 @@ async def sessions_proxy(
             return Response(content="Invalid JSON body", status_code=400)
 
         if request.method == HTTPMethod.POST.value:
-            return await _handle_offer(request_data, background_tasks)
+            return await _handle_offer(
+                request_data,
+                background_tasks,
+                active_sessions.get(session_id),
+            )
 
     return Response(status_code=200)
 

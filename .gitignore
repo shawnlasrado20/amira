@@ -12,3 +12,6 @@ npm-debug.log*
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Local n8n runtime/database backups
+.n8n-backup/
