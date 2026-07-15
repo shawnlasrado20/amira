@@ -260,14 +260,10 @@ A: Yes — vegetarian, vegan, and gluten-free dishes are marked.</textarea>
 
             <!-- Custom Prompt -->
             <div class="essentials apanel" id="panel-prompt">
-              <div class="essentials-head"><h2>Custom Prompt / Instructions</h2></div>
-              <p class="hint-line">The full system prompt that defines how AMIRA behaves.</p>
-              <div class="field"><label>System prompt</label>
-                <textarea class="control" id="f-prompt" style="min-height:240px;">You are Amira, the friendly AI phone receptionist for Saffron House, a North Indian restaurant. Speak naturally in English. Keep replies short and warm.
-
-On every call: greet the caller, answer questions about the restaurant, take table bookings (collect name, date, time, party size and read them back to confirm), answer menu questions, and give opening hours and location.
-
-Be concise (1–2 sentences), human and upbeat, confirm bookings before ending, and close politely.</textarea>
+              <div class="essentials-head"><h2>Custom Instructions</h2></div>
+              <p class="hint-line">These instructions are added underneath AMIRA's protected master prompt. Clients cannot replace safety or voice rules.</p>
+              <div class="field"><label>Additional behaviour instructions</label>
+                <textarea class="control" id="f-prompt" style="min-height:200px;">Prioritize the caller's immediate question. Use the company information and knowledge base as the only source for business-specific answers. Confirm any names, dates, times, email addresses, or booking details by reading them back before ending the call.</textarea>
               </div>
             </div>
 
@@ -371,7 +367,7 @@ Be concise (1–2 sentences), human and upbeat, confirm bookings before ending, 
   <div class="modal">
     <div class="modal-head"><h3>Assistant configuration (output)</h3><span class="x" id="modalX">✕</span></div>
     <div class="modal-body">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">This JSON is the output of the forms. Forward it to your n8n workflow / AgenticFlow when ready — nothing has been sent.</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Configuration saved in this browser. Close this preview and click <b>Test in browser</b> to send it through n8n to a temporary voice session.</p>
       <pre id="out-json"></pre>
     </div>
     <div class="modal-foot">
@@ -488,6 +484,14 @@ Be concise (1–2 sentences), human and upbeat, confirm bookings before ending, 
       meta: { generatedAt: new Date().toISOString(), source: "AMIRA Studio" }
     };
   }
+
+  let autosaveTimer;
+  document.querySelectorAll("input.control, textarea.control, select.control").forEach(el => {
+    el.addEventListener("input", () => {
+      clearTimeout(autosaveTimer);
+      autosaveTimer=setTimeout(() => localStorage.setItem("amiraStudioConfig", JSON.stringify(buildConfig())), 250);
+    });
+  });
 
   const modalBg = document.getElementById("modalBg");
   const outJson = document.getElementById("out-json");

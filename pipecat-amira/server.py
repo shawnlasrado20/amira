@@ -280,6 +280,21 @@ async def metrics():
     }
 
 
+@app.get("/sessions/{session_id}/context-status", include_in_schema=False)
+async def session_context_status(session_id: str):
+    """Local prototype diagnostic: confirms routing without returning tenant content."""
+    data = active_sessions.get(session_id)
+    if data is None:
+        return Response(content="Invalid or expired session_id", status_code=404)
+    config = data.get("assistantConfig") if isinstance(data, dict) else None
+    return {
+        "configured": isinstance(config, dict),
+        "has_company": bool((config or {}).get("company")),
+        "has_assistant": bool((config or {}).get("assistant")),
+        "language": data.get("language") if isinstance(data, dict) else None,
+    }
+
+
 # ---------------------------------------------------------------------------
 # RTVI /start endpoint
 # ---------------------------------------------------------------------------
