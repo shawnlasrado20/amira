@@ -156,15 +156,15 @@
       <p style="font-size: 17px; color: #6b6156; max-width: 34ch; margin: 0 0 6px;">Amira adapts to how your business actually runs, then handles the phone so you don't have to.</p>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;">
+    <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
 
       <!-- Big dark card: booking -->
-      <div class="am-bento" style="grid-column: span 2; background: #17130f; color: #f6f1e9; border-radius: 24px; padding: 36px; display: grid; grid-template-columns: 1.05fr .95fr; gap: 30px; align-items: center; min-height: 300px; position: relative; overflow: hidden;">
+      <div class="am-bento" style="background: #17130f; color: #f6f1e9; border-radius: 28px; padding: clamp(32px,4vw,52px); display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(28px,4vw,56px); align-items: center; min-height: 320px; position: relative; overflow: hidden;">
         <div style="position: absolute; top: -80px; right: -60px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--accent,#ef5b2b) 40%, transparent), transparent 70%); filter: blur(30px); pointer-events: none;"></div>
         <div style="position: relative;">
           <div style="width: 48px; height: 48px; border-radius: 13px; background: color-mix(in srgb, var(--accent,#ef5b2b) 24%, #17130f); display: flex; align-items: center; justify-content: center; margin-bottom: 22px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#ef5b2b)" stroke-width="1.7"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h3"/></svg></div>
           <h3 style="font-family: var(--display-font,'Instrument Serif',serif); font-weight: 400; font-size: 36px; line-height: 1.02; margin: 0 0 10px;">Books appointments while you work</h3>
-          <p style="font-size: 16px; line-height: 1.5; color: #b3ab9f; margin: 0; max-width: 42ch;">Amira checks your live calendar, offers real openings, and confirms the booking on the call — then syncs it everywhere.</p>
+          <p style="font-size: 16px; line-height: 1.5; color: #b3ab9f; margin: 0; max-width: 42ch;">Amira checks your live calendar, offers real openings, confirms on the call — then syncs it everywhere and emails you the summary the moment the call ends.</p>
         </div>
         <div style="position: relative; background: #211b16; border: 1px solid #322920; border-radius: 18px; padding: 18px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;"><span style="font-size: 12px; letter-spacing: .05em; color: #a79f95;">TODAY · AVAILABILITY</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #2fae6b; box-shadow: 0 0 0 3px #2fae6b33;"></span></div>
@@ -181,46 +181,12 @@
         </div>
       </div>
 
-      <!-- Answers -->
-      <div class="am-bento" style="background: #fbf7ef; border: 1px solid #e6ddcd; border-radius: 24px; padding: 32px; display: flex; flex-direction: column; min-height: 300px;">
-        <div style="width: 48px; height: 48px; border-radius: 13px; background: #efe7d8; display: flex; align-items: center; justify-content: center; margin-bottom: 22px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#171310" stroke-width="1.7"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-        <h3 style="font-family: var(--display-font,'Instrument Serif',serif); font-weight: 400; font-size: 30px; margin: 0 0 8px;">Answers every question</h3>
-        <p style="font-size: 16px; line-height: 1.5; color: #6b6156; margin: 0 0 20px;">Hours, pricing, directions — trained on your business in minutes.</p>
-        <div style="display: flex; flex-direction: column; gap: 9px; margin-top: auto;">
-          <span style="align-self: flex-start; font-size: 14px; color: #3a332d; background: #fff; border: 1px solid #e6ddcd; border-radius: 12px 12px 12px 3px; padding: 9px 13px;">"What are your opening hours?"</span>
-          <span style="align-self: flex-end; font-size: 14px; color: #fff; background: var(--accent,#ef5b2b); border-radius: 12px 12px 3px 12px; padding: 9px 13px;">Mon–Sat, 8am to 6pm.</span>
-        </div>
-      </div>
-
-      <!-- Summaries -->
-      <div class="am-bento" style="background: #fbf7ef; border: 1px solid #e6ddcd; border-radius: 24px; padding: 32px; display: flex; flex-direction: column; min-height: 260px;">
-        <div style="width: 48px; height: 48px; border-radius: 13px; background: #efe7d8; display: flex; align-items: center; justify-content: center; margin-bottom: 22px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#171310" stroke-width="1.7"><path d="M4 4h16v12H5.2L4 17.2z"/><path d="M8 9h8M8 12h5"/></svg></div>
-        <h3 style="font-family: var(--display-font,'Instrument Serif',serif); font-weight: 400; font-size: 30px; margin: 0 0 8px;">Summaries in your inbox</h3>
-        <p style="font-size: 16px; line-height: 1.5; color: #6b6156; margin: 0 0 20px;">Every call transcribed, tagged, and emailed the moment it ends.</p>
-        <div style="display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #e6ddcd; border-radius: 13px; padding: 12px 14px; margin-top: auto;">
-          <span style="width: 34px; height: 34px; border-radius: 9px; background: color-mix(in srgb, var(--accent,#ef5b2b) 14%, #fff); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#ef5b2b)" stroke-width="1.9"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span>
-          <div style="min-width: 0;"><div style="font-size: 14px; font-weight: 600; color: #171310;">Call summary · New booking</div><div style="font-size: 12px; color: #8a8078;">Amira · just now</div></div>
-        </div>
-      </div>
-
-      <!-- Transfer -->
-      <div class="am-bento" style="background: #fbf7ef; border: 1px solid #e6ddcd; border-radius: 24px; padding: 32px; display: flex; flex-direction: column; min-height: 260px;">
-        <div style="width: 48px; height: 48px; border-radius: 13px; background: #efe7d8; display: flex; align-items: center; justify-content: center; margin-bottom: 22px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#171310" stroke-width="1.7"><path d="M17 2l4 4-4 4"/><path d="M3 12v-2a4 4 0 0 1 4-4h14M7 22l-4-4 4-4"/><path d="M21 12v2a4 4 0 0 1-4 4H3"/></svg></div>
-        <h3 style="font-family: var(--display-font,'Instrument Serif',serif); font-weight: 400; font-size: 30px; margin: 0 0 8px;">Knows when to transfer</h3>
-        <p style="font-size: 16px; line-height: 1.5; color: #6b6156; margin: 0 0 20px;">Warm-transfers to the right person, or takes a message if you're away.</p>
-        <div style="display: flex; align-items: center; gap: 10px; margin-top: auto;">
-          <span style="display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 500; color: #3a332d; background: #fff; border: 1px solid #e6ddcd; border-radius: 100px; padding: 7px 12px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent,#ef5b2b);"></span>Caller</span>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3a897" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          <span style="display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 500; color: #fff; background: #17130f; border-radius: 100px; padding: 7px 12px;"><span style="width: 20px; height: 20px; border-radius: 50%; background: #efe7d8; color: #171310; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center;">AR</span>Dr. Reyes</span>
-        </div>
-      </div>
-
       <!-- Voice/brand wide accent -->
-      <div class="am-bento" style="grid-column: span 2; background: color-mix(in srgb, var(--accent,#ef5b2b) 12%, #fbf7ef); border: 1px solid color-mix(in srgb, var(--accent,#ef5b2b) 30%, #e6ddcd); border-radius: 24px; padding: 36px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 30px; align-items: center; min-height: 240px;">
+      <div class="am-bento" style="background: color-mix(in srgb, var(--accent,#ef5b2b) 12%, #fbf7ef); border: 1px solid color-mix(in srgb, var(--accent,#ef5b2b) 30%, #e6ddcd); border-radius: 28px; padding: clamp(32px,4vw,52px); display: grid; grid-template-columns: 1.1fr .9fr; gap: clamp(28px,4vw,56px); align-items: center; min-height: 320px;">
         <div>
           <div style="width: 48px; height: 48px; border-radius: 13px; background: var(--accent,#ef5b2b); display: flex; align-items: center; justify-content: center; margin-bottom: 20px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><path d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
           <h3 style="font-family: var(--display-font,'Instrument Serif',serif); font-weight: 400; font-size: 34px; margin: 0 0 8px;">Sounds human. Stays on brand.</h3>
-          <p style="font-size: 16px; line-height: 1.5; color: #5a5148; margin: 0; max-width: 44ch;">Choose the voice, tone, and exact words. Amira handles the messy edge cases the way you'd want a real person to.</p>
+          <p style="font-size: 16px; line-height: 1.5; color: #5a5148; margin: 0; max-width: 44ch;">Choose the voice, tone, and exact words. Amira answers FAQs, warm-transfers tricky calls to the right person, and handles the messy edge cases like a real receptionist would.</p>
         </div>
         <div style="background: #fff; border: 1px solid color-mix(in srgb, var(--accent,#ef5b2b) 22%, #e6ddcd); border-radius: 18px; padding: 18px;">
           <div style="font-size: 12px; letter-spacing: .05em; color: #8a8078; margin-bottom: 12px;">TONE</div>
