@@ -45,9 +45,9 @@ _PRODUCT_BASE = (
     "calendar, answers FAQs from the business's own info, takes messages, warm-transfers to a "
     "human when needed, and sends a summary after every call. Speaks forty-plus languages. "
     "Works with Google Calendar and CRMs. GDPR compliant. Live in under ten minutes. No credit "
-    "card needed for the demo. Pricing: Starter is forty-nine dollars a month — two hundred "
-    "call minutes, one assistant, calendar sync. Growth is one hundred forty-nine dollars a "
-    "month — one thousand five hundred minutes, five assistants, CRM integration, warm "
+    "card needed for the demo. Pricing: Starter is 49 dollars a month — 200 "
+    "call minutes, one assistant, calendar sync. Growth is 149 dollars a "
+    "month — 1500 minutes, five assistants, CRM integration, warm "
     "transfers. Scale is custom pricing. No setup fees on any plan. If asked something outside "
     "these facts, say the demo team will cover it and offer to book the demo. "
 
@@ -62,8 +62,11 @@ _PRODUCT_BASE = (
     "VOICE STYLE — everything you write is spoken aloud by TTS: "
     "One to two short sentences per reply; pricing may take three. Sound like a real person — "
     "contractions, an occasional 'hmm' or 'right', but only where natural, NOT every turn, "
-    "and never open two replies the same way. At most one question per reply. Numbers as "
-    "words (forty-nine, one hundred forty-nine). Never use ellipsis, dots, emojis, lists, or "
+    "and never open two replies the same way. At most one question per reply. Write prices "
+    "and numbers as DIGITS (49 dollars, 149 dollars, 200 minutes) — the TTS reads digits "
+    "correctly in every language. NEVER write a price in words and never translate it — "
+    "copy the digits exactly as written in the facts. "
+    "Never use ellipsis, dots, emojis, lists, or "
     "markdown — they break the audio. "
 
     "EDGE CASES: If the caller's words seem garbled or empty, briefly ask them to repeat. "
@@ -92,7 +95,8 @@ LANGUAGE_CONFIG: dict[str, dict] = {
             "Never write Hindi in Roman letters. "
             "Style: casual young Delhi/Mumbai mix. "
             "Correct examples: 'हाँ भाई, Amira 24/7 calls handle करता है!', "
-            "'Demo book करना है?', 'Starter plan सिर्फ forty-nine dollars में है.'"
+            "'Demo book करना है?', 'Starter plan सिर्फ 49 dollars में है.'"
+            "Price example to copy verbatim: 'Growth plan 149 dollars में है, 1500 minutes के साथ.'"
         ),
     },
     "ta": {
@@ -113,7 +117,7 @@ LANGUAGE_CONFIG: dict[str, dict] = {
             "ஆகும், வழங்குகிறது, கூறுகிறேன், தாங்கள், எவ்வாறு, மேலும், மிகவும் சிறந்த. "
             "Examples of the EXACT style to match: "
             "'Amira 24/7 calls pick பண்ணும் — ஒரு call கூட miss ஆகாது!', "
-            "'Starter plan forty-nine dollars தான், அதுல two hundred minutes இருக்கு.', "
+            "'Starter plan 49 dollars தான், அதுல 200 minutes இருக்கு.', "
             "'உங்க business என்ன பண்ணுது, சொல்லுங்க?', "
             "'Demo book பண்ணலாமா? உங்க பேர் என்ன?', "
             "'அது demo team பார்த்துக்கும், நீங்க demo book பண்ணுங்க போதும்!'"
@@ -130,6 +134,7 @@ LANGUAGE_CONFIG: dict[str, dict] = {
             "Never write Telugu in Roman letters. "
             "Style: casual young Hyderabad mix. "
             "Correct examples: 'Amira 24/7 calls handle చేస్తుంది!', 'Demo book చేద్దామా?'"
+            "Price example to copy verbatim: 'Growth plan 149 dollars, 1500 minutes!'"
         ),
     },
     "kn": {
@@ -143,6 +148,97 @@ LANGUAGE_CONFIG: dict[str, dict] = {
             "Never write Kannada in Roman letters. "
             "Style: casual young Bengaluru mix. "
             "Correct examples: 'Amira 24/7 calls handle ಮಾಡುತ್ತದೆ!', 'Demo book ಮಾಡೋಣವಾ?'"
+            "Price example to copy verbatim: 'Growth plan 149 dollars, 1500 minutes!'"
+        ),
+    },
+    "bn": {
+        "stt": Language.BN_IN,
+        "tts": Language.BN_IN,
+        "voice": "ratan",
+        "greeting": "Hey! আমি Arjun, Amira থেকে — AI receptionist. কী জানতে চান?",
+        "tone": (
+            "CRITICAL: Write ALL Bengali words in Bengali script. "
+            "English product words (Amira, demo, call, AI, pricing, plan, minutes) stay in English. "
+            "Never write Bengali in Roman letters. "
+            "Style: casual young Kolkata conversation, never literary Bengali. "
+            "Correct examples: 'Amira 24/7 calls handle করে — একটাও miss হয় না!', "
+            "'Demo book করবেন নাকি?', 'Starter plan মাত্র 49 dollars-এ।'"
+            "Price example to copy verbatim: 'Growth plan 149 dollars এ, মাসে 1500 minutes।'"
+        ),
+    },
+    "mr": {
+        "stt": Language.MR_IN,
+        "tts": Language.MR_IN,
+        "voice": "shubh",
+        "greeting": "Hey! मी Arjun, Amira कडून — AI receptionist. काय जाणून घ्यायचंय?",
+        "tone": (
+            "CRITICAL: Write ALL Marathi words in Devanagari script. "
+            "English product words (Amira, demo, call, AI, pricing, plan, minutes) stay in English. "
+            "Never write Marathi in Roman letters. "
+            "Style: casual young Mumbai/Pune conversation, never formal Marathi. "
+            "Correct examples: 'Amira 24/7 calls handle करते — एकही miss होत नाही!', "
+            "'Demo book करूया का?', 'Starter plan फक्त 49 dollars मध्ये.'"
+            "Price example to copy verbatim: 'Growth plan 149 dollars मध्ये, 1500 minutes.'"
+        ),
+    },
+    "gu": {
+        "stt": Language.GU_IN,
+        "tts": Language.GU_IN,
+        "voice": "shubh",
+        "greeting": "Hey! હું Arjun, Amira તરફથી — AI receptionist. શું જાણવું છે?",
+        "tone": (
+            "CRITICAL: Write ALL Gujarati words in Gujarati script. "
+            "English product words (Amira, demo, call, AI, pricing, plan, minutes) stay in English. "
+            "Never write Gujarati in Roman letters. "
+            "Style: casual young Ahmedabad conversation, never formal Gujarati. "
+            "Correct examples: 'Amira 24/7 calls handle કરે છે — એક પણ miss નહીં!', "
+            "'Demo book કરીએ?', 'Starter plan માત્ર 49 dollarsમાં.'"
+            "Price example to copy verbatim: 'Growth plan 149 dollarsમાં, 1500 minutes.'"
+        ),
+    },
+    "ml": {
+        "stt": Language.ML_IN,
+        "tts": Language.ML_IN,
+        "voice": "ratan",
+        "greeting": "Hey! ഞാൻ Arjun, Amira-യിൽ നിന്ന് — AI receptionist. എന്താ അറിയേണ്ടത്?",
+        "tone": (
+            "CRITICAL: Write ALL Malayalam words in Malayalam script. "
+            "English product words (Amira, demo, call, AI, pricing, plan, minutes) stay in English. "
+            "Never write Malayalam in Roman letters. "
+            "Style: casual young Kochi conversation, never literary Malayalam. "
+            "Correct examples: 'Amira 24/7 calls handle ചെയ്യും — ഒരു call പോലും miss ആവില്ല!', "
+            "'Demo book ചെയ്യാം?', 'Starter plan വെറും 49 dollars ആണ്.'"
+            "Price example to copy verbatim: 'Growth plan 149 dollars ആണ്, 1500 minutes.'"
+        ),
+    },
+    "pa": {
+        "stt": Language.PA_IN,
+        "tts": Language.PA_IN,
+        "voice": "shubh",
+        "greeting": "Hey! ਮੈਂ Arjun, Amira ਵੱਲੋਂ — AI receptionist. ਕੀ ਜਾਣਨਾ ਹੈ?",
+        "tone": (
+            "CRITICAL: Write ALL Punjabi words in Gurmukhi script. "
+            "English product words (Amira, demo, call, AI, pricing, plan, minutes) stay in English. "
+            "Never write Punjabi in Roman letters. "
+            "Style: casual young Punjabi conversation, warm and direct, never formal. "
+            "Correct examples: 'Amira 24/7 calls handle ਕਰਦੀ ਹੈ — ਇੱਕ ਵੀ miss ਨਹੀਂ!', "
+            "'Demo book ਕਰੀਏ?', 'Starter plan ਸਿਰਫ਼ 49 dollars ਵਿੱਚ.'"
+            "Price example to copy verbatim: 'Growth plan 149 dollars ਵਿੱਚ, 1500 minutes.'"
+        ),
+    },
+    "od": {
+        "stt": Language.OR_IN,
+        "tts": Language.OR_IN,
+        "voice": "ratan",
+        "greeting": "Hey! ମୁଁ Arjun, Amira ରୁ — AI receptionist. କଣ ଜାଣିବାକୁ ଚାହୁଁଛନ୍ତି?",
+        "tone": (
+            "CRITICAL: Write ALL Odia words in Odia script. "
+            "English product words (Amira, demo, call, AI, pricing, plan, minutes) stay in English. "
+            "Never write Odia in Roman letters. "
+            "Style: casual young Bhubaneswar conversation, never literary Odia. "
+            "Correct examples: 'Amira 24/7 calls handle କରେ — ଗୋଟିଏ ବି miss ହୁଏ ନାହିଁ!', "
+            "'Demo book କରିବା କି?', 'Starter plan ମାତ୍ର 49 dollars ରେ.'"
+            "Price example to copy verbatim: 'Growth plan 149 dollars ରେ, 1500 minutes.'"
         ),
     },
 }
@@ -157,10 +253,15 @@ async def run_bot(transport: BaseTransport, language: str = "hi"):
     greeting = cfg["greeting"]
     system_prompt = _build_system_prompt(cfg["tone"])
 
+    # saaras:v3 replaces saarika:v2.5 (now officially "Legacy" in Sarvam docs).
+    # mode="codemix" outputs English words in English script and Indic words in native
+    # script — the same convention our prompts use — and v3 adds entity preservation
+    # (names/emails for the booking flow) and 8kHz telephony optimization.
     stt = SarvamSTTService(
         api_key=os.getenv("SARVAM_API_KEY"),
+        mode="codemix",
         settings=SarvamSTTService.Settings(
-            model="saarika:v2.5",
+            model="saaras:v3",
             language=cfg["stt"],
         ),
     )

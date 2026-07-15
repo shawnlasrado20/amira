@@ -66,6 +66,7 @@
       <p style="font-size: clamp(17px,1.5vw,20px); line-height: 1.6; color: #4a423a; max-width: 44ch; margin: 30px 0 0;">Amira is an AI phone agent that picks up in one ring, books appointments, answers questions, and hands you a clean summary of every call — day or night.</p>
       <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px;">
         <button id="talk-btn" class="am-cta am-accent" style="border: none; cursor: pointer; font-family: inherit; background: var(--accent,#ef5b2b); color: #fff; border-radius: 100px; padding: 16px 30px; font-size: 16px; font-weight: 600;">Talk to Amira live</button>
+        <button id="mute-btn" style="display:none; border: 1.5px solid #cfc5b6; cursor: pointer; font-family: inherit; background: transparent; color: #171310; border-radius: 100px; padding: 16px 24px; font-size: 16px; font-weight: 600;">Mute</button>
         <a href="#pricing" class="am-cta" style="text-decoration: none; background: transparent; color: #171310; border: 1.5px solid #cfc5b6; border-radius: 100px; padding: 16px 28px; font-size: 16px; font-weight: 600;">See pricing</a>
       </div>
 
@@ -78,6 +79,12 @@
           <button class="lang-opt" data-lang="ta"><span style="font-size:15px;display:block;margin-bottom:2px;">தமிழ்</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Tamil</span></button>
           <button class="lang-opt" data-lang="te"><span style="font-size:15px;display:block;margin-bottom:2px;">తెలుగు</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Telugu</span></button>
           <button class="lang-opt" data-lang="kn"><span style="font-size:15px;display:block;margin-bottom:2px;">ಕನ್ನಡ</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Kannada</span></button>
+          <button class="lang-opt" data-lang="bn"><span style="font-size:15px;display:block;margin-bottom:2px;">বাংলা</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Bengali</span></button>
+          <button class="lang-opt" data-lang="mr"><span style="font-size:15px;display:block;margin-bottom:2px;">मराठी</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Marathi</span></button>
+          <button class="lang-opt" data-lang="gu"><span style="font-size:15px;display:block;margin-bottom:2px;">ગુજરાતી</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Gujarati</span></button>
+          <button class="lang-opt" data-lang="ml"><span style="font-size:15px;display:block;margin-bottom:2px;">മലയാളം</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Malayalam</span></button>
+          <button class="lang-opt" data-lang="pa"><span style="font-size:15px;display:block;margin-bottom:2px;">ਪੰਜਾਬੀ</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Punjabi</span></button>
+          <button class="lang-opt" data-lang="od"><span style="font-size:15px;display:block;margin-bottom:2px;">ଓଡ଼ିଆ</span><span style="font-size:10px;color:#a79f95;font-weight:400;">Odia</span></button>
           <button id="lang-cancel">Cancel</button>
         </div>
       </div>
@@ -364,6 +371,7 @@
     const PIPECAT_BASE_URL = "http://localhost:8000";
 
     const talkBtn = document.getElementById("talk-btn");
+    const muteBtn = document.getElementById("mute-btn");
     const widgetStatus = document.getElementById("widget-status");
     const liveBadge = document.getElementById("live-badge");
     const waveformBars = document.querySelectorAll("#waveform span");
@@ -475,11 +483,27 @@
       }
     }
 
+    let muted = false;
+
+    muteBtn.addEventListener("click", () => {
+      if (!micStream) return;
+      muted = !muted;
+      micStream.getAudioTracks().forEach(t => t.enabled = !muted);
+      muteBtn.textContent = muted ? "Unmute" : "Mute";
+      muteBtn.style.background = muted ? "#f0ebe4" : "transparent";
+      muteBtn.style.color = muted ? "#8b7355" : "#171310";
+    });
+
     function setLiveUI(on) {
       live = on;
       showPicker(false);
       if (on) {
         talkBtn.textContent = "🔴 End call";
+        muteBtn.style.display = "inline-flex";
+        muteBtn.textContent = "Mute";
+        muteBtn.style.background = "transparent";
+        muteBtn.style.color = "#171310";
+        muted = false;
         liveBadge.textContent = "LIVE";
         liveBadge.style.color = "#2fae6b";
         liveBadge.style.borderColor = "#2fae6b55";
@@ -492,6 +516,7 @@
         clearTranscript();
       } else {
         talkBtn.textContent = "Talk to Amira live";
+        muteBtn.style.display = "none";
         liveBadge.textContent = "STANDBY";
         liveBadge.style.color = "#a79f95";
         liveBadge.style.borderColor = "#a79f9555";
@@ -526,7 +551,11 @@
       });
     }
 
+    let connecting = false;
+
     async function startCall(language) {
+      if (connecting || live) return;
+      connecting = true;
       talkBtn.disabled = true;
       talkBtn.textContent = "Connecting…";
       widgetStatus.textContent = "connecting…";
@@ -580,6 +609,8 @@
         cleanup();
         talkBtn.textContent = "Couldn't connect — try again";
         setTimeout(() => { if (!live) talkBtn.textContent = "Talk to Amira live"; }, 4000);
+      } finally {
+        connecting = false;
       }
     }
 
