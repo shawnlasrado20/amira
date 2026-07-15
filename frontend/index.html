@@ -75,7 +75,7 @@
       <h1 style="font-family: var(--display-font, 'Instrument Serif', serif); font-weight: 400; font-size: clamp(52px,6vw,86px); line-height: 1.03; letter-spacing: -.02em; margin: 28px 0 0;">The receptionist<br>who never<br><span style="font-style: italic; color: var(--accent,#ef5b2b);">misses a call.</span></h1>
       <p style="font-size: clamp(17px,1.5vw,20px); line-height: 1.6; color: #4a423a; max-width: 44ch; margin: 20px 0 0;">Amira picks up in one ring, books appointments, and speaks 11 Indian languages — 24/7.</p>
       <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; position: relative;">
-        <button id="talk-btn" class="am-cta am-accent" style="border: none; cursor: pointer; font-family: inherit; background: var(--accent,#ef5b2b); color: #fff; border-radius: 100px; padding: 18px 34px; font-size: 17px; font-weight: 600;">🎙️ Talk to Amira live</button>
+        <button id="talk-btn" class="am-cta am-accent" style="border: none; cursor: pointer; font-family: inherit; background: var(--accent,#ef5b2b); color: #fff; border-radius: 100px; padding: 18px 34px; font-size: 17px; font-weight: 600;">Talk to Amira live</button>
         <button id="mute-btn" style="display:none; border: 1.5px solid #cfc5b6; cursor: pointer; font-family: inherit; background: transparent; color: #171310; border-radius: 100px; padding: 16px 24px; font-size: 16px; font-weight: 600;">Mute</button>
         <a href="#pricing" class="am-link" style="align-self: center; color: #574f45; font-size: 16px; font-weight: 500; margin-left: 10px;">See pricing</a>
       </div>
@@ -348,7 +348,7 @@
       <div style="position: absolute; top: -120px; right: -80px; width: 340px; height: 340px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.22), transparent 70%); pointer-events: none;"></div>
       <h2 style="font-family: var(--display-font,'Instrument Serif',serif); font-weight: 400; font-size: clamp(38px,5.6vw,68px); line-height: 1.02; letter-spacing: -.02em; margin: 0;">Never miss another call.</h2>
       <p style="font-size: 18px; margin: 18px auto 0; max-width: 42ch; color: rgba(255,255,255,.85);">Talk to Amira right now in your language — no signup, no credit card, just your voice.</p>
-      <button onclick="document.getElementById('talk-btn').scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(function(){document.getElementById('talk-btn').click()}, 600);" class="am-cta" style="margin-top: 30px; border: none; cursor: pointer; font-family: inherit; background: #17130f; color: #f6f1e9; border-radius: 100px; padding: 18px 36px; font-size: 17px; font-weight: 600;">🎙️ Talk to Amira live</button>
+      <button onclick="document.getElementById('talk-btn').scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(function(){document.getElementById('talk-btn').click()}, 600);" class="am-cta" style="margin-top: 30px; border: none; cursor: pointer; font-family: inherit; background: #17130f; color: #f6f1e9; border-radius: 100px; padding: 18px 36px; font-size: 17px; font-weight: 600;">Talk to Amira live</button>
     </div>
   </section>
 
@@ -528,7 +528,7 @@
       live = on;
       setChipsEnabled(!on);
       if (on) {
-        talkBtn.textContent = "🔴 End call";
+        talkBtn.textContent = "End call";
         muteBtn.style.display = "inline-flex";
         muteBtn.textContent = "Mute";
         muteBtn.style.background = "transparent";
@@ -545,7 +545,7 @@
         }, 1000);
         clearTranscript();
       } else {
-        talkBtn.textContent = "🎙️ Talk to Amira live";
+        talkBtn.textContent = "Talk to Amira live";
         muteBtn.style.display = "none";
         liveBadge.textContent = "STANDBY";
         liveBadge.style.color = "#a79f95";
@@ -638,7 +638,7 @@
         console.error("Voice session error:", err);
         cleanup();
         talkBtn.textContent = "Couldn't connect — try again";
-        setTimeout(() => { if (!live) talkBtn.textContent = "🎙️ Talk to Amira live"; }, 4000);
+        setTimeout(() => { if (!live) talkBtn.textContent = "Talk to Amira live"; }, 4000);
       } finally {
         connecting = false;
       }
