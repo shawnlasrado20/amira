@@ -32,11 +32,21 @@
   .am-bento:hover { transform: translateY(-5px); box-shadow: 0 26px 50px rgba(20,16,14,.09); }
   .am-price { transition: transform .3s ease, box-shadow .3s ease; }
   .am-price:hover { transform: translateY(-6px); box-shadow: 0 28px 60px rgba(20,16,14,.12); }
+
+  /* premium motion */
+  @keyframes hero-in { from { opacity: 0; transform: translateY(18px) } to { opacity: 1; transform: none } }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-in-1 { animation: hero-in .8s cubic-bezier(.2,.7,.3,1) both .05s; }
+    .hero-in-2 { animation: hero-in .8s cubic-bezier(.2,.7,.3,1) both .22s; }
+    [data-reveal] { opacity: 0; transform: translateY(28px); transition: opacity .75s cubic-bezier(.2,.7,.3,1), transform .75s cubic-bezier(.2,.7,.3,1); transition-delay: var(--rd, 0s); }
+    [data-reveal].rv-in { opacity: 1; transform: none; }
+  }
+  #navwrap.scrolled { background: rgba(246,241,233,.82); backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3); box-shadow: 0 1px 0 rgba(20,16,14,.08), 0 8px 30px rgba(20,16,14,.05); }
   .am-in:focus { outline: none; border-color: var(--accent,#ef5b2b); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent,#ef5b2b) 18%, transparent); }
 </style>
 </head>
 <body>
-<div id="amira-root" style="--accent: #ef5b2b; --display-font: 'Instrument Serif', Georgia, serif; --grain-opacity: 0.5; position: relative; font-family: 'Space Grotesk', system-ui, sans-serif; background: #f6f1e9; color: #171310; overflow-x: hidden; -webkit-font-smoothing: antialiased;">
+<div id="amira-root" style="--accent: #ef5b2b; --display-font: 'Instrument Serif', Georgia, serif; --grain-opacity: 0.5; position: relative; font-family: 'Space Grotesk', system-ui, sans-serif; background: #f6f1e9; color: #171310; -webkit-font-smoothing: antialiased;">
 
   <!-- paper grain -->
   <div style="position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: var(--grain-opacity,.5); mix-blend-mode: multiply; background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%222%22 stitchTiles=%22stitch%22/></filter><rect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22 opacity=%220.5%22/></svg>');"></div>
@@ -44,6 +54,7 @@
   <div style="position: relative; z-index: 2;">
 
   <!-- ══ NAV ══ -->
+  <div id="navwrap" style="position: sticky; top: 0; z-index: 40; transition: background .3s ease, box-shadow .3s ease, backdrop-filter .3s ease;">
   <nav style="display: flex; align-items: center; justify-content: space-between; padding: 22px clamp(20px,5vw,72px); max-width: 1400px; margin: 0 auto;">
     <a href="#top" style="text-decoration: none; color: #171310; display: flex; align-items: center; gap: 10px;">
       <span style="width: 30px; height: 30px; border-radius: 9px; background: var(--accent,#ef5b2b); display: inline-flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
@@ -54,20 +65,21 @@
       <a href="#demo" class="am-cta am-dark" style="text-decoration: none; background: #171310; color: #f6f1e9; border-radius: 100px; padding: 12px 22px; font-size: 15px; font-weight: 500;">Book a demo</a>
     </div>
   </nav>
+  </div>
 
   <!-- ══ HERO ══ -->
-  <header id="top" style="max-width: 1360px; margin: 0 auto; padding: clamp(48px,7vw,104px) clamp(20px,5vw,72px) clamp(72px,9vw,120px); display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(48px,7vw,110px); align-items: center;">
+  <header id="top" style="max-width: 1360px; margin: 0 auto; padding: clamp(20px,3vw,40px) clamp(20px,5vw,72px) clamp(40px,5vw,64px); min-height: calc(100svh - 96px); align-content: center; display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(48px,7vw,110px); align-items: center;">
     <div>
       <div style="display: inline-flex; align-items: center; gap: 9px; border: 1px solid #d9d0c2; border-radius: 100px; padding: 8px 16px; font-size: 14px; font-weight: 500; color: #574f45;">
         <span style="width: 8px; height: 8px; border-radius: 50%; background: #2fae6b; box-shadow: 0 0 0 3px #2fae6b33;"></span>
         Live · answering calls right now
       </div>
-      <h1 style="font-family: var(--display-font, 'Instrument Serif', serif); font-weight: 400; font-size: clamp(50px,6.4vw,90px); line-height: 1.02; letter-spacing: -.02em; margin: 32px 0 0;">The receptionist<br>who never<br><span style="font-style: italic; color: var(--accent,#ef5b2b);">misses a call.</span></h1>
-      <p style="font-size: clamp(17px,1.5vw,20px); line-height: 1.6; color: #4a423a; max-width: 44ch; margin: 30px 0 0;">Amira is an AI phone agent that picks up in one ring, books appointments, answers questions, and hands you a clean summary of every call — day or night.</p>
-      <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px;">
-        <button id="talk-btn" class="am-cta am-accent" style="border: none; cursor: pointer; font-family: inherit; background: var(--accent,#ef5b2b); color: #fff; border-radius: 100px; padding: 16px 30px; font-size: 16px; font-weight: 600;">Talk to Amira live</button>
+      <h1 style="font-family: var(--display-font, 'Instrument Serif', serif); font-weight: 400; font-size: clamp(52px,6vw,86px); line-height: 1.03; letter-spacing: -.02em; margin: 28px 0 0;">The receptionist<br>who never<br><span style="font-style: italic; color: var(--accent,#ef5b2b);">misses a call.</span></h1>
+      <p style="font-size: clamp(17px,1.5vw,20px); line-height: 1.6; color: #4a423a; max-width: 44ch; margin: 20px 0 0;">Amira picks up in one ring, books appointments, and speaks 11 Indian languages — 24/7.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px;">
+        <button id="talk-btn" class="am-cta am-accent" style="border: none; cursor: pointer; font-family: inherit; background: var(--accent,#ef5b2b); color: #fff; border-radius: 100px; padding: 18px 34px; font-size: 17px; font-weight: 600;">🎙️ Talk to Amira live</button>
         <button id="mute-btn" style="display:none; border: 1.5px solid #cfc5b6; cursor: pointer; font-family: inherit; background: transparent; color: #171310; border-radius: 100px; padding: 16px 24px; font-size: 16px; font-weight: 600;">Mute</button>
-        <a href="#pricing" class="am-cta" style="text-decoration: none; background: transparent; color: #171310; border: 1.5px solid #cfc5b6; border-radius: 100px; padding: 16px 28px; font-size: 16px; font-weight: 600;">See pricing</a>
+        <a href="#pricing" class="am-link" style="align-self: center; color: #574f45; font-size: 16px; font-weight: 500; margin-left: 10px;">See pricing</a>
       </div>
 
       <!-- Language picker — appears when "Talk to Amira live" is clicked -->
@@ -89,19 +101,15 @@
         </div>
       </div>
       <audio id="remoteAudio" autoplay playsinline style="display: none;"></audio>
-      <div style="display: flex; align-items: center; gap: clamp(24px,3vw,44px); margin-top: 52px; padding-top: 30px; border-top: 1px solid #e0d6c6;">
-        <div><div style="font-family: var(--display-font,'Instrument Serif',serif); font-size: 44px; line-height: 1;">1 ring</div><div style="font-size: 14px; color: #6b6156; margin-top: 6px;">average pickup</div></div>
-        <div style="align-self: stretch; width: 1px; background: #e0d6c6;"></div>
-        <div><div style="font-family: var(--display-font,'Instrument Serif',serif); font-size: 44px; line-height: 1;">24/7</div><div style="font-size: 14px; color: #6b6156; margin-top: 6px;">always on</div></div>
-        <div style="align-self: stretch; width: 1px; background: #e0d6c6;"></div>
-        <div><div style="font-family: var(--display-font,'Instrument Serif',serif); font-size: 44px; line-height: 1;">40+</div><div style="font-size: 14px; color: #6b6156; margin-top: 6px;">languages</div></div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 38px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #8a8078;">
+        <span>1-ring pickup</span><span style="color:#cfc5b6;">·</span><span>24/7</span><span style="color:#cfc5b6;">·</span><span>11 languages</span><span style="color:#cfc5b6;">·</span><span>No credit card</span>
       </div>
     </div>
 
     <!-- Call widget -->
     <div style="justify-self: center; width: 100%; max-width: 410px; animation: floaty 7s ease-in-out infinite;">
-      <div style="background: #17130f; border-radius: 28px; padding: 26px; box-shadow: 0 34px 70px rgba(20,16,14,.28); color: #f6f1e9;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+      <div style="background: #17130f; border-radius: 28px; padding: 28px; box-shadow: 0 34px 70px rgba(20,16,14,.28); color: #f6f1e9;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
           <div style="display: flex; align-items: center; gap: 11px;">
             <span style="width: 44px; height: 44px; border-radius: 50%; background: var(--accent,#ef5b2b); display: inline-flex; align-items: center; justify-content: center; animation: pulse 2.2s ease-out infinite;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
             <div><div style="font-weight: 600; font-size: 16px;">Amira</div><div id="widget-status" style="font-size: 13px; color: #a79f95;">ready when you are</div></div>
@@ -109,7 +117,7 @@
           <span id="live-badge" style="font-size: 12px; font-weight: 600; color: #a79f95; border: 1px solid #a79f9555; border-radius: 100px; padding: 4px 10px;">STANDBY</span>
         </div>
         <!-- waveform -->
-        <div id="waveform" style="display: flex; align-items: center; justify-content: center; gap: 4px; height: 64px; margin-bottom: 22px;">
+        <div id="waveform" style="display: flex; align-items: center; justify-content: center; gap: 4px; height: 56px; margin-bottom: 20px;">
           <span style="width:4px;height:100%;border-radius:4px;background:var(--accent,#ef5b2b);transform-origin:center;animation:eq 1s ease-in-out infinite;animation-delay:-.9s"></span>
           <span style="width:4px;height:100%;border-radius:4px;background:#e9c7b6;transform-origin:center;animation:eq 1.1s ease-in-out infinite;animation-delay:-.2s"></span>
           <span style="width:4px;height:100%;border-radius:4px;background:var(--accent,#ef5b2b);transform-origin:center;animation:eq .9s ease-in-out infinite;animation-delay:-.5s"></span>
@@ -127,15 +135,11 @@
           <span style="width:4px;height:100%;border-radius:4px;background:#e9c7b6;transform-origin:center;animation:eq 1.2s ease-in-out infinite;animation-delay:-.55s"></span>
           <span style="width:4px;height:100%;border-radius:4px;background:var(--accent,#ef5b2b);transform-origin:center;animation:eq 1s ease-in-out infinite;animation-delay:-.25s"></span>
         </div>
-        <div id="transcript-box" style="background: #211b16; border-radius: 16px; padding: 16px 18px; min-height: 80px; max-height: 160px; overflow-y: auto;">
+        <div id="transcript-box" style="background: #211b16; border-radius: 16px; padding: 16px 18px; min-height: 96px; max-height: 150px; overflow-y: auto;">
           <div style="font-size: 12px; color: #a79f95; margin-bottom: 8px; letter-spacing: .04em;">TRANSCRIPT</div>
           <div id="transcript-lines" style="display: flex; flex-direction: column; gap: 6px;">
             <p id="transcript-placeholder" style="font-size: 15px; line-height: 1.5; margin: 0; color: #ede6dc;"><span style="color: var(--accent,#ef5b2b); font-weight: 600;">Amira:</span> Of course — I have Thursday at 2pm or Friday morning. Which works better for you?</p>
           </div>
-        </div>
-        <div style="display: flex; gap: 10px; margin-top: 16px;">
-          <div style="flex: 1; text-align: center; background: #211b16; border-radius: 12px; padding: 12px;"><div style="font-size: 12px; color: #a79f95;">Booked</div><div style="font-weight: 600; font-size: 15px;">Thu · 2:00pm</div></div>
-          <div style="flex: 1; text-align: center; background: #211b16; border-radius: 12px; padding: 12px;"><div style="font-size: 12px; color: #a79f95;">Caller</div><div style="font-weight: 600; font-size: 15px;">New lead</div></div>
         </div>
       </div>
     </div>
@@ -241,14 +245,14 @@
     <div style="text-align: center; margin-bottom: 52px;">
       <div style="font-size: 14px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent,#ef5b2b); margin-bottom: 12px;">Pricing</div>
       <h2 style="font-family: var(--display-font,'Instrument Serif',serif); font-weight: 400; font-size: clamp(40px,6vw,76px); line-height: 1; letter-spacing: -.02em; margin: 0;">Simple plans that pay<br>for themselves.</h2>
-      <p style="font-size: 18px; color: #6b6156; margin: 20px auto 0; max-width: 44ch;">Every plan includes call summaries, calendar sync, and 40+ languages. No setup fees.</p>
+      <p style="font-size: 18px; color: #6b6156; margin: 20px auto 0; max-width: 44ch;">Every plan includes call summaries, calendar sync, and 11 Indian languages. No setup fees.</p>
     </div>
 
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: stretch;">
 
       <div class="am-price" style="background: #fbf7ef; border: 1px solid #e6ddcd; border-radius: 24px; padding: 34px;">
         <div style="font-size: 15px; font-weight: 600; color: #6b6156;">Starter</div>
-        <div style="display: flex; align-items: baseline; gap: 6px; margin: 16px 0 6px;"><span style="font-family: var(--display-font,'Instrument Serif',serif); font-size: 62px; line-height: 1;">$49</span><span style="color: #8a8078; font-size: 16px;">/mo</span></div>
+        <div style="display: flex; align-items: baseline; gap: 6px; margin: 16px 0 6px;"><span style="font-family: var(--display-font,'Instrument Serif',serif); font-size: 56px; line-height: 1;">₹1,999</span><span style="color: #8a8078; font-size: 16px;">/mo</span></div>
         <p style="font-size: 15px; color: #6b6156; margin: 0 0 24px;">For solo owners who just can't keep missing calls.</p>
         <a href="#demo" class="am-cta" style="display: block; text-align: center; text-decoration: none; background: transparent; color: #171310; border: 1.5px solid #cfc5b6; border-radius: 100px; padding: 14px; font-weight: 600; font-size: 15px; margin-bottom: 26px;">Book a demo</a>
         <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 13px;">
@@ -262,7 +266,7 @@
       <div class="am-price" style="background: #17130f; color: #f6f1e9; border-radius: 24px; padding: 34px; position: relative; box-shadow: 0 24px 50px rgba(20,16,14,.18);">
         <div style="position: absolute; top: 22px; right: 22px; font-size: 12px; font-weight: 600; background: var(--accent,#ef5b2b); color: #fff; border-radius: 100px; padding: 5px 12px;">Most popular</div>
         <div style="font-size: 15px; font-weight: 600; color: #b3ab9f;">Growth</div>
-        <div style="display: flex; align-items: baseline; gap: 6px; margin: 16px 0 6px;"><span style="font-family: var(--display-font,'Instrument Serif',serif); font-size: 62px; line-height: 1;">$149</span><span style="color: #a79f95; font-size: 16px;">/mo</span></div>
+        <div style="display: flex; align-items: baseline; gap: 6px; margin: 16px 0 6px;"><span style="font-family: var(--display-font,'Instrument Serif',serif); font-size: 56px; line-height: 1;">₹3,999</span><span style="color: #a79f95; font-size: 16px;">/mo</span></div>
         <p style="font-size: 15px; color: #b3ab9f; margin: 0 0 24px;">For busy teams that live and die by the phone.</p>
         <a href="#demo" class="am-cta am-accent" style="display: block; text-align: center; text-decoration: none; background: var(--accent,#ef5b2b); color: #fff; border-radius: 100px; padding: 14px; font-weight: 600; font-size: 15px; margin-bottom: 26px;">Book a demo</a>
         <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 13px;">
@@ -276,7 +280,7 @@
 
       <div class="am-price" style="background: #fbf7ef; border: 1px solid #e6ddcd; border-radius: 24px; padding: 34px;">
         <div style="font-size: 15px; font-weight: 600; color: #6b6156;">Scale</div>
-        <div style="display: flex; align-items: baseline; gap: 6px; margin: 16px 0 6px;"><span style="font-family: var(--display-font,'Instrument Serif',serif); font-size: 62px; line-height: 1;">Custom</span></div>
+        <div style="display: flex; align-items: baseline; gap: 6px; margin: 16px 0 6px;"><span style="font-family: var(--display-font,'Instrument Serif',serif); font-size: 56px; line-height: 1;">Custom</span></div>
         <p style="font-size: 15px; color: #6b6156; margin: 0 0 24px;">For multi-location businesses and call centers.</p>
         <a href="#demo" class="am-cta" style="display: block; text-align: center; text-decoration: none; background: transparent; color: #171310; border: 1.5px solid #cfc5b6; border-radius: 100px; padding: 14px; font-weight: 600; font-size: 15px; margin-bottom: 26px;">Talk to sales</a>
         <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 13px;">
@@ -677,6 +681,51 @@
     });
   })();
   </script>
+
+
+<script>
+  // ══ Premium motion: entrance, scroll reveals, frosted nav ══
+  (function () {
+    // hero entrance
+    var hero = document.getElementById("top");
+    if (hero && hero.children[0]) hero.children[0].classList.add("hero-in-1");
+    if (hero && hero.children[1]) hero.children[1].classList.add("hero-in-2");
+
+    // frosted sticky nav
+    var navwrap = document.getElementById("navwrap");
+    function onScroll() {
+      if (navwrap) navwrap.classList.toggle("scrolled", window.scrollY > 12);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+
+    // scroll reveals: section headers + cards, staggered
+    var targets = [];
+    document.querySelectorAll("section").forEach(function (sec) {
+      var head = sec.querySelector(".section-head") || sec.firstElementChild;
+      if (head) targets.push([head, 0]);
+    });
+    document.querySelectorAll(".am-bento").forEach(function (el, i) { targets.push([el, (i % 3) * 0.09]); });
+    document.querySelectorAll(".am-price").forEach(function (el, i) { targets.push([el, i * 0.10]); });
+    var demoCard = document.querySelector("#demo > div");
+    if (demoCard) targets.push([demoCard, 0.05]);
+    var footer = document.querySelector("footer .footer-inner") || document.querySelector("footer > div");
+    if (footer) targets.push([footer, 0]);
+
+    if (!("IntersectionObserver" in window)) return;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add("rv-in"); io.unobserve(e.target); }
+      });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+
+    targets.forEach(function (t) {
+      t[0].setAttribute("data-reveal", "");
+      t[0].style.setProperty("--rd", t[1] + "s");
+      io.observe(t[0]);
+    });
+  })();
+</script>
 
 </body>
 </html>
