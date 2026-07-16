@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assistant — Amira</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --accent: #ef5b2b; --ink: #17130f; --paper: #f6f1e9; --card: #fbf7ef; --border: #e0d6c6; --muted: #8a8078; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Space Grotesk', system-ui, sans-serif; background: var(--paper); color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .shell { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
+
+  /* ── sidebar ── */
+  .side { border-right: 1px solid var(--border); padding: 22px 16px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); padding: 0 10px 18px; }
+  .brand .mark { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); display: inline-flex; align-items: center; justify-content: center; }
+  .brand .word { font-family: 'Instrument Serif', serif; font-size: 25px; line-height: 1; }
+  .side .sec { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 16px 10px 6px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; font-size: 14px; font-weight: 500; color: #574f45; text-decoration: none; cursor: pointer; }
+  .nav-item:hover { background: #efe7d8; color: var(--ink); }
+  .nav-item.on { background: var(--ink); color: #f6f1e9; }
+  .help { margin-top: auto; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; font-size: 13px; color: #574f45; }
+  .help a { color: var(--accent); font-weight: 600; text-decoration: none; }
+
+  /* ── main ── */
+  .main { padding: 22px clamp(20px,3.5vw,48px) 120px; }
+  .crumb { font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+  .crumb b { color: var(--ink); font-weight: 500; }
+  h1 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: clamp(30px,3.2vw,40px); letter-spacing: -.02em; margin: 18px 0 2px; display: flex; align-items: center; gap: 12px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
+  .tabs { display: flex; gap: 22px; border-bottom: 1.5px solid var(--border); margin-bottom: 22px; }
+  .tab { padding: 10px 2px; font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1.5px; }
+  .tab.on { color: var(--ink); border-bottom-color: var(--accent); }
+
+  .cols { display: grid; grid-template-columns: minmax(340px, 460px) 1fr; gap: 22px; align-items: start; }
+  .ability { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s, transform .15s, box-shadow .2s; }
+  .ability:hover { border-color: #c9bda9; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(20,16,14,.05); }
+  .ability.on { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent); }
+  .ability .ic { width: 34px; height: 34px; border-radius: 9px; background: #efe7d8; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ability .nm { font-size: 14.5px; font-weight: 600; }
+  .ability .ds { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .ability .tail { margin-left: auto; color: var(--muted); font-size: 18px; flex-shrink: 0; }
+  .ability .tick { color: #2fae6b; font-weight: 700; }
+  .adv-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 20px 0 10px; }
+
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 24px; min-height: 320px; position: sticky; top: 22px; }
+  .panel h3 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 24px; margin: 0 0 6px; }
+  .panel .pd { font-size: 13.5px; color: var(--muted); margin: 0 0 18px; }
+  .prow { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; border: 1px solid var(--border); background: #fff; border-radius: 13px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s; }
+  .prow:hover { border-color: #c9bda9; }
+  .prow .t { font-size: 14px; font-weight: 600; }
+  .prow .d { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  .panel textarea { width: 100%; min-height: 120px; font-family: inherit; font-size: 14px; padding: 12px 14px; border: 1.5px solid #ddd3c3; border-radius: 12px; background: #fff; color: var(--ink); resize: vertical; }
+  .panel textarea:focus { outline: none; border-color: var(--accent); }
+  .save-mini { margin-top: 10px; background: var(--ink); color: #f6f1e9; border: none; border-radius: 100px; padding: 10px 20px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .fl { display: block; font-size: 13px; font-weight: 600; color: #574f45; margin: 14px 0 6px; }
+  .fl:first-child { margin-top: 0; }
+  .fi { width: 100%; font-family: inherit; font-size: 14px; padding: 11px 13px; border: 1.5px solid #ddd3c3; border-radius: 11px; background: #fff; color: var(--ink); }
+  textarea.fi { min-height: 80px; resize: vertical; }
+  .fi:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); }
+  .kb-drop { border: 1.5px dashed #cfc5b6; border-radius: 12px; padding: 20px; text-align: center; color: var(--muted); font-size: 13px; cursor: pointer; transition: border-color .15s, background .15s; }
+  .kb-drop:hover, .kb-drop.drag { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+  .kb-doc { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; margin-top: 8px; font-size: 13px; }
+  .kb-doc .rm { margin-left: auto; color: var(--muted); cursor: pointer; font-weight: 700; }
+  .kb-doc .rm:hover { color: #b4232a; }
+  .fld-toggle { position: relative; width: 40px; height: 23px; border-radius: 100px; background: #cfc5b6; border: none; cursor: pointer; flex-shrink: 0; transition: background .18s; }
+  .fld-toggle.on { background: #2fae6b; }
+  .fld-toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 17px; height: 17px; border-radius: 50%; background: #fff; transition: left .18s; }
+  .fld-toggle.on::after { left: 20px; }
+  .row-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0 6px; }
+  .row-head .fl { margin: 0; }
+
+  /* ── modal ── */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(20,16,14,.45); z-index: 90; align-items: center; justify-content: center; padding: 20px; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--paper); border-radius: 20px; width: min(620px, 100%); padding: 26px; box-shadow: 0 40px 90px rgba(20,16,14,.35); }
+  .modal h3 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 26px; margin: 0 0 14px; }
+  .modal textarea { width: 100%; min-height: 200px; font-family: inherit; font-size: 14px; padding: 14px 16px; border: 1.5px solid #ddd3c3; border-radius: 14px; background: #fff; resize: vertical; }
+  .modal textarea:focus { outline: none; border-color: var(--accent); }
+  .modal .row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+  .btn-ghost { background: transparent; border: 1.5px solid var(--border); color: var(--ink); border-radius: 100px; padding: 11px 22px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-ink { background: var(--ink); border: none; color: #f6f1e9; border-radius: 100px; padding: 11px 22px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+  /* ── voice picker ── */
+  .v-scope { border: none; background: transparent; color: #574f45; border-radius: 100px; padding: 7px 16px; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .v-scope.on { background: #fff; color: var(--ink); box-shadow: 0 2px 6px rgba(20,16,14,.1); }
+  .v-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; cursor: pointer; }
+  .v-row:hover { background: #f1ebe0; }
+  .v-row.sel { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  .v-row .av { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg,#efe7d8,#ddd3c3); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #574f45; flex-shrink: 0; }
+  .v-row .vn { font-size: 14px; font-weight: 600; }
+  .v-row .vd { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .v-row .vr { margin-left: auto; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #cfc5b6; flex-shrink: 0; }
+  .v-row.sel .vr { border-color: var(--ink); background: var(--ink); box-shadow: inset 0 0 0 3px #fff; }
+
+  /* ── side drawer ── */
+  .drawer-bg { display: none; position: fixed; inset: 0; background: rgba(20,16,14,.35); z-index: 95; }
+  .drawer-bg.open { display: block; }
+  .drawer { position: fixed; top: 0; right: -420px; width: min(420px, 92vw); height: 100vh; background: var(--paper); border-left: 1px solid var(--border); box-shadow: -20px 0 50px rgba(20,16,14,.2); transition: right .25s ease; overflow-y: auto; padding: 24px 24px 100px; z-index: 96; }
+  .drawer-bg.open .drawer { right: 0; }
+  .drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .drawer-head h3 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 22px; margin: 0; }
+  .drawer-x { cursor: pointer; color: var(--muted); font-size: 20px; background: none; border: none; }
+  .d-field { margin-bottom: 18px; }
+  .d-field label { display: block; font-size: 12.5px; font-weight: 600; color: #574f45; margin-bottom: 7px; }
+  .d-field input[type=text], .d-field textarea, .d-field select { width: 100%; font-family: inherit; font-size: 14px; padding: 11px 13px; border: 1.5px solid #ddd3c3; border-radius: 11px; background: #fff; color: var(--ink); }
+  .d-field input:focus, .d-field textarea:focus, .d-field select:focus { outline: none; border-color: var(--accent); }
+  .d-field textarea { resize: vertical; min-height: 70px; }
+  .d-seg { display: flex; gap: 4px; background: #efe7d8; border-radius: 100px; padding: 3px; margin-bottom: 18px; }
+  .d-seg button { flex: 1; border: none; background: transparent; color: #574f45; border-radius: 100px; padding: 8px 10px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .d-seg button.on { background: #fff; color: var(--ink); box-shadow: 0 2px 6px rgba(20,16,14,.1); }
+  .d-toggle-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border); }
+  .d-toggle-row:first-of-type { border-top: none; }
+  .d-toggle-row .tt { font-size: 13.5px; font-weight: 600; }
+  .d-toggle-row .td { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+  .d-toggle { width: 36px; height: 20px; border-radius: 999px; background: var(--border); position: relative; flex-shrink: 0; cursor: pointer; transition: background .15s; margin-top: 2px; }
+  .d-toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .15s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+  .d-toggle.on { background: var(--accent); }
+  .d-toggle.on::after { left: 18px; }
+  .drawer-save { display: block; background: var(--ink); border: none; color: #f6f1e9; border-radius: 100px; padding: 13px 24px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px; }
+  .target-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid var(--border); background: #fff; border-radius: 13px; padding: 13px 16px; margin-bottom: 8px; }
+  .target-row .tn { font-size: 14px; font-weight: 600; }
+  .target-row .tp { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .target-row .rm { color: var(--muted); background: none; border: none; cursor: pointer; font-size: 16px; }
+  .target-row .rm:hover { color: #b4232a; }
+
+  /* ── floating test bar ── */
+  .callbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 80; display: flex; align-items: center; gap: 10px; background: var(--ink); border-radius: 100px; padding: 8px 10px; box-shadow: 0 20px 50px rgba(20,16,14,.35); }
+  .callbar select { background: #211b16; color: #ede6dc; border: 1px solid #322920; border-radius: 100px; padding: 9px 12px; font-family: inherit; font-size: 13px; font-weight: 600; }
+  .cb-ghost { background: transparent; border: 1px solid #3a2f27; color: #cfc5b6; border-radius: 100px; padding: 10px 18px; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .cb-main { background: var(--accent); border: none; color: #fff; border-radius: 100px; padding: 10px 22px; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .cb-main.live { background: #b4232a; }
+  .cb-status { color: #a79f95; font-size: 12.5px; padding: 0 4px 0 8px; }
+
+  /* live transcript card above bar */
+  .livecard { display: none; position: fixed; left: 50%; transform: translateX(-50%); bottom: 84px; z-index: 79; width: min(560px, 92vw); background: #211b16; color: #ede6dc; border-radius: 18px; padding: 16px 18px; max-height: 200px; overflow-y: auto; box-shadow: 0 24px 60px rgba(20,16,14,.4); }
+  .livecard.open { display: block; }
+  .livecard .cap { font-size: 11px; letter-spacing: .06em; color: #a79f95; margin-bottom: 8px; }
+  .livecard p { font-size: 14px; line-height: 1.5; margin: 0 0 6px; }
+
+  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #2fae6b; color: #04210f; font-weight: 600; font-size: 14px; border-radius: 100px; padding: 12px 24px; z-index: 100; box-shadow: 0 14px 34px rgba(0,0,0,.18); opacity: 0; transition: opacity .4s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .assistant-tools { display:flex; gap:9px; align-items:center; flex-wrap:wrap; margin:14px 0 4px; }
+  .assistant-tools select { min-width:210px; }
+  .view-hidden { display:none !important; }
+  .history-head { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:22px; }
+  .history-list { display:grid; gap:12px; }
+  .history-card { background:#fff; border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+  .history-row { display:grid; grid-template-columns:1.5fr 1.2fr .55fr .55fr .65fr; gap:14px; padding:17px 18px; align-items:center; cursor:pointer; font-size:13px; }
+  .history-row:hover { background:#fbf7ef; }
+  .history-meta { color:var(--muted); font-size:12px; margin-top:3px; }
+  .history-detail { display:none; border-top:1px solid var(--line); padding:18px; background:#fffdfa; }
+  .history-card.open .history-detail { display:block; }
+  .history-section { margin-bottom:16px; }
+  .history-section h4 { margin:0 0 7px; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .transcript-line { margin:0 0 7px; line-height:1.5; }
+  .empty-history { padding:42px; text-align:center; border:1px dashed var(--line); border-radius:16px; color:var(--muted); }
+  @media (max-width: 900px) { .shell { grid-template-columns: 1fr; } .side { display: none; } .cols { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <a class="brand" href="index.html">
+      <span class="mark"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+      <span class="word">Amira</span>
+    </a>
+    <div class="nav-item">Home</div>
+    <div class="sec">Contents</div>
+    <div class="nav-item on" id="nav-assistants">Assistants</div>
+    <div class="nav-item">Knowledge Base</div>
+    <div class="nav-item">Phone Numbers</div>
+    <div class="nav-item" id="nav-history">Call History</div>
+    <div class="sec">Admin</div>
+    <div class="nav-item">Payments</div>
+    <div class="nav-item">API Keys</div>
+    <div class="nav-item">Integrations</div>
+    <div class="nav-item">Users</div>
+    <div class="help">Find instructions and guides from our team here.<br><a href="#">Open documentation</a></div>
+  </aside>
+
+  <main class="main">
+    <section id="assistant-view">
+    <div class="crumb">Home <span>›</span> Assistants <span>›</span> <b>Assistant detail</b></div>
+    <h1>Edit ‘Amira’ <span id="plan-chip" style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#efe7d8;color:#574f45;border-radius:100px;padding:5px 12px;"></span></h1>
+    <p class="sub" id="assist-sub">Receptionist for your business</p>
+    <div class="assistant-tools">
+      <select class="fi" id="assistant-select" aria-label="Saved assistant"><option value="">Unsaved draft</option></select>
+      <button class="btn-ghost" id="new-assistant">New assistant</button>
+      <button class="btn-ink" id="save-assistant">Save assistant</button>
+      <span class="cb-status" id="save-state">Draft</span>
+    </div>
+
+    <div class="tabs">
+      <div class="tab on" data-tab="behaviour">Behaviour</div>
+      <div class="tab" data-tab="technical">Technical</div>
+    </div>
+
+    <div class="cols" id="tab-behaviour">
+      <div>
+        <div class="ability" data-key="essentials">
+          <span class="ic">✦</span>
+          <div><div class="nm">Essentials</div><div class="ds">Name, voice, language and greeting</div></div>
+          <span class="tail">›</span>
+        </div>
+        <div class="ability" data-key="answers">
+          <span class="ic">💬</span>
+          <div><div class="nm">Answer questions</div><div class="ds">FAQs from your business info</div></div>
+          <span class="tail tick">✓</span>
+        </div>
+        <div class="ability" data-key="transfer">
+          <span class="ic">↪</span>
+          <div><div class="nm">Transfer calls</div><div class="ds">Forward to your team or phone numbers</div></div>
+          <span class="tail">＋</span>
+        </div>
+        <div class="ability" data-key="email">
+          <span class="ic">✉️</span>
+          <div><div class="nm">Send email</div><div class="ds">Call summaries and custom templates</div></div>
+          <span class="tail tick">✓</span>
+        </div>
+
+        <div class="adv-label">Advanced abilities</div>
+        <div class="ability" data-key="prompt">
+          <span class="ic">📝</span>
+          <div><div class="nm">Custom prompt / instructions</div><div class="ds">Fine-tune exactly how she speaks</div></div>
+          <span class="tail">›</span>
+        </div>
+        <div class="ability" data-key="sms">
+          <span class="ic">📱</span>
+          <div><div class="nm">Send SMS</div><div class="ds">Dynamic texts to callers or fixed numbers</div></div>
+          <span class="tail">＋</span>
+        </div>
+        <div class="ability" data-key="book">
+          <span class="ic">📅</span>
+          <div><div class="nm">Book appointments</div><div class="ds">Straight into your calendar, on the call</div></div>
+          <span class="tail tick">✓</span>
+        </div>
+        <div class="ability" data-key="webhooks">
+          <span class="ic">⚙︎</span>
+          <div><div class="nm">Webhooks</div><div class="ds">Inbound and outbound API workflows</div></div>
+          <span class="tail">›</span>
+        </div>
+      </div>
+
+      <div class="panel" id="detail-panel">
+        <h3 id="p-title">Essentials</h3>
+        <p class="pd" id="p-desc">The basics of how Amira presents herself on every call.</p>
+        <div id="p-body"></div>
+      </div>
+    </div>
+
+    <div class="cols" id="tab-technical" style="display:none;">
+      <div>
+        <div class="ability"><span class="ic">🔊</span><div><div class="nm">Voice engine</div><div class="ds">Sarvam bulbul:v3 · natural Indian voices</div></div><span class="tail tick">✓</span></div>
+        <div class="ability"><span class="ic">👂</span><div><div class="nm">Speech recognition</div><div class="ds">Sarvam saaras:v3 · 11 languages, code-mix</div></div><span class="tail tick">✓</span></div>
+        <div class="ability"><span class="ic">🧠</span><div><div class="nm">Reasoning model</div><div class="ds">Low-latency LLM tuned for sales calls</div></div><span class="tail tick">✓</span></div>
+        <div class="ability"><span class="ic">🔒</span><div><div class="nm">Data &amp; privacy</div><div class="ds">Recordings and transcripts stay in your account</div></div><span class="tail">›</span></div>
+      </div>
+      <div class="panel"><h3>Technical</h3><p class="pd">Engine settings are managed for you. Talk to us for custom voice cloning, on-prem hosting, or SIP trunk configuration.</p></div>
+    </div>
+    </section>
+    <section id="history-view" class="view-hidden">
+      <div class="crumb">Home <span>›</span> <b>Call History</b></div>
+      <div class="history-head"><div><h1>Call History</h1><p class="sub">Browser test calls, transcripts, summaries and recordings.</p></div><button class="btn-ghost" id="refresh-history">Refresh</button></div>
+      <div class="history-list" id="call-history-list"><div class="empty-history">Loading calls…</div></div>
+    </section>
+  </main>
+</div>
+
+<!-- Custom prompt modal -->
+<div class="overlay" id="prompt-overlay">
+  <div class="modal">
+    <h3>Custom prompt / instructions</h3>
+    <textarea id="prompt-text" placeholder="e.g. If someone asks about parking, tell them the entrance is behind Marina Walk and it's free for customers…"></textarea>
+    <div class="row">
+      <button class="btn-ghost" id="prompt-cancel">Cancel</button>
+      <button class="btn-ink" id="prompt-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Voice picker modal -->
+<div class="overlay" id="voice-overlay">
+  <div class="modal" style="max-width:560px;">
+    <h3>Select voice</h3>
+    <div style="display:flex; gap:16px; align-items:center; margin-bottom:16px;">
+      <div style="display:flex; gap:4px; background:#efe7d8; border-radius:100px; padding:3px;">
+        <button class="v-scope on" data-scope="all">All</button>
+        <button class="v-scope" data-scope="popular">Popular</button>
+      </div>
+      <select id="v-lang-filter" style="margin-left:auto; border:1.5px solid #ddd3c3; border-radius:100px; padding:8px 14px; font-family:inherit; font-size:13px; font-weight:600; background:#fff; color:var(--ink);">
+        <option value="multi">Multi (Hindi, English, Tamil…)</option>
+        <option value="en">English</option>
+        <option value="hi">Hindi</option>
+        <option value="ta">Tamil</option>
+      </select>
+    </div>
+    <div id="voice-list" style="max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:4px;"></div>
+    <div class="row">
+      <button class="btn-ghost" id="voice-cancel">Cancel</button>
+      <button class="btn-ink" id="voice-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Transfer calls drawer -->
+<div class="drawer-bg" id="transfer-drawer-bg">
+  <div class="drawer">
+    <div class="drawer-head"><h3>Call transfer</h3><button class="drawer-x" id="transfer-drawer-x">✕</button></div>
+    <div class="d-field"><label>Activity</label><select id="tr-activity"><option>Always</option><option>Business hours only</option></select></div>
+    <div class="d-field"><label>Who does this number belong to?</label><input type="text" id="tr-owner" placeholder="e.g. Finance, Front desk…"></div>
+    <div class="d-seg" id="tr-seg">
+      <button class="on" data-t="user">User</button>
+      <button data-t="phone">Phone Number</button>
+      <button data-t="sip">SIP</button>
+    </div>
+    <div class="d-field" id="tr-target-field"><label>Phone number</label><input type="text" id="tr-number" placeholder="+91 98765 43210"></div>
+    <div class="d-toggle-row"><div><div class="tt">Check calendar before transfer</div><div class="td">Agent checks this person's availability before transferring.</div></div><span class="d-toggle" id="tr-t-calendar"></span></div>
+    <div class="d-toggle-row"><div><div class="tt">Notification email</div><div class="td">Sends a summary if the transfer fails or isn't picked up.</div></div><span class="d-toggle" id="tr-t-notify"></span></div>
+    <div class="d-field"><label>In which cases should this transfer be performed?</label><textarea id="tr-condition" placeholder="e.g. If a customer has questions about pricing"></textarea></div>
+    <button class="drawer-save" id="tr-save">Save</button>
+  </div>
+</div>
+
+<!-- Send email drawer -->
+<div class="drawer-bg" id="email-drawer-bg">
+  <div class="drawer">
+    <div class="drawer-head"><h3>Send email</h3><button class="drawer-x" id="email-drawer-x">✕</button></div>
+    <div class="d-field"><label>Name</label><input type="text" id="em-name" placeholder="Email to Support Team"></div>
+    <div class="d-field"><label>Subject</label><input type="text" id="em-subject" placeholder="Amira — Call Received"></div>
+    <div class="d-field"><label>Recipient(s)</label><input type="text" id="em-recipients" placeholder="recipient@company.com"></div>
+    <div class="d-field"><label>Under what condition should an email be sent after the call?</label><textarea id="em-condition" placeholder="e.g. The caller asked for a callback"></textarea></div>
+    <div class="d-field"><label>Content</label><textarea id="em-content" style="min-height:100px;">Hello,
+
+You received a call from {{fromNumber}}.</textarea></div>
+    <button class="drawer-save" id="em-save">Save</button>
+  </div>
+</div>
+
+<!-- Assign number modal -->
+<div class="overlay" id="assign-overlay">
+  <div class="modal" style="max-width:480px;">
+    <h3>Assign number</h3>
+    <p style="font-size:13.5px;color:var(--muted);margin:-4px 0 16px;">All your numbers are assigned to other assistants.</p>
+    <div style="background:#efe7d8;border-radius:13px;padding:13px 15px;font-size:12.5px;color:#574f45;line-height:1.5;margin-bottom:14px;">
+      Numbers provided by us can be purchased directly on the platform — no further action required.
+    </div>
+    <div id="assign-quota-warning" style="display:none;background:#fbeaea;border:1px solid #f0c9c9;border-radius:13px;padding:13px 15px;font-size:12.5px;color:#a23b3b;line-height:1.5;margin-bottom:18px;">
+      You have exceeded your included quota. Additional numbers are charged at $5/month.
+    </div>
+    <div class="row" style="justify-content:space-between;">
+      <button class="btn-ghost" id="assign-cancel">Cancel</button>
+      <button class="btn-ink" id="assign-buy">Buy new number</button>
+    </div>
+  </div>
+</div>
+
+<!-- Live transcript + call bar -->
+<div class="livecard" id="livecard">
+  <div class="cap">LIVE TRANSCRIPT</div>
+  <div id="live-lines"></div>
+</div>
+<div class="callbar">
+  <select id="test-lang">
+    <option value="en">English</option><option value="hi">हिंदी</option><option value="ta">தமிழ்</option>
+    <option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="bn">বাংলা</option>
+    <option value="mr">मराठी</option><option value="gu">ગુજરાતી</option><option value="ml">മലയാളം</option>
+    <option value="pa">ਪੰਜਾਬੀ</option><option value="od">ଓଡ଼ିଆ</option>
+  </select>
+  <button class="cb-ghost" id="assign-btn">Assign number</button>
+  <button class="cb-ghost" id="mute-btn" disabled>Mute</button>
+  <button class="cb-main" id="test-btn">Test call</button>
+  <span class="cb-status" id="cb-status"></span>
+</div>
+
+<div class="toast" id="toast"></div>
+<audio id="remoteAudio" autoplay playsinline style="display:none;"></audio>
+
+<script>
+(function () {
+  // ── guard + personalization ──────────────────────────────
+  var user = {};
+  try { user = JSON.parse(localStorage.getItem("amira_user") || "{}"); } catch (e) {}
+  if (!user.email) { location.href = "signup.html"; return; }
+  var plan = localStorage.getItem("amira_plan");
+  if (!plan) { location.href = "plan.html"; return; }
+
+  document.getElementById("plan-chip").textContent = plan + " plan";
+  if (user.business) document.getElementById("assist-sub").textContent = "Receptionist for " + user.business;
+
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(function () { t.classList.remove("show"); }, 3200);
+  }
+  if (new URLSearchParams(location.search).get("welcome")) {
+    toast("Trial started — welcome to Amira!");
+    history.replaceState(null, "", "dashboard.html");
+  }
+
+  // ── tabs ─────────────────────────────────────────────────
+  document.querySelectorAll(".tab").forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      document.querySelectorAll(".tab").forEach(function (t) { t.classList.toggle("on", t === tab); });
+      document.getElementById("tab-behaviour").style.display = tab.dataset.tab === "behaviour" ? "" : "none";
+      document.getElementById("tab-technical").style.display = tab.dataset.tab === "technical" ? "" : "none";
+    });
+  });
+
+  // ── detail panel content per ability ─────────────────────
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+  var bizName = esc(user.business || "your business");
+  var panels = {
+    essentials: { t: "Essentials", d: "Tell Amira about your business — she uses this on every call.",
+      b: '<label class="fl">Business name</label><input class="fi" id="f-biz" placeholder="Saffron House" />' +
+         '<label class="fl">Business type</label><input class="fi" id="f-industry" placeholder="Restaurant, clinic, salon…" />' +
+         '<label class="fl">Website</label><input class="fi" id="f-website" placeholder="https://…" />' +
+         '<label class="fl">Location &amp; hours</label><textarea class="fi" id="f-hours" placeholder="Ground floor Marina Walk · Mon–Sun, 12pm–11pm"></textarea>' +
+         '<label class="fl">Services &amp; policies</label><textarea class="fi" id="f-services" placeholder="Popular dishes, prices, booking rules, anything Amira should know…"></textarea>' +
+         '<label class="fl">Start message (greeting)</label><textarea class="fi" id="f-startmsg" placeholder="Leave blank to use the default greeting in each language"></textarea>' +
+         '<div class="prow" id="voice-row" style="margin-top:14px;"><div><div class="t">Voice</div><div class="d" id="voice-row-desc">Warm female · natural Indian accent</div></div><span>›</span></div>' +
+         '<div class="prow"><div><div class="t">Languages</div><div class="d">All 11 — auto-detected per caller</div></div><span>›</span></div>' +
+         '<button class="save-mini" id="save-essentials">Save</button>' },
+    answers: { t: "Answer questions", d: "Amira answers caller questions from your knowledge.",
+      b: '<label class="fl">Knowledge source</label><input class="fi" id="f-answer-source" placeholder="e.g. Saffron House FAQs" />' +
+         '<label class="fl">Questions &amp; answers</label><textarea class="fi" id="f-answer-faqs" style="min-height:130px;" placeholder="Q: What are your opening hours?\nA: Lunch 12–3pm, dinner 6–11pm, daily."></textarea>' +
+         '<label class="fl">Knowledge documents</label>' +
+         '<div class="kb-drop" id="kb-drop">Drop a PDF, TXT or DOC here, or click to upload<input type="file" id="kb-input" multiple accept=".pdf,.txt,.doc,.docx,.md" style="display:none" /></div>' +
+         '<div id="kb-list"></div>' +
+         '<button class="save-mini" id="save-answers">Save</button>' },
+    transfer: { t: "Transfer calls", d: "Warm-transfer to the right person when a human is needed.",
+      b: '<div id="transfer-list"></div><div class="prow" id="add-transfer-row"><div><div class="t">Add transfer</div><div class="d">Send calls to a person, number, or SIP endpoint</div></div><span>＋</span></div>' },
+    email: { t: "Send email", d: "A clean summary in your inbox the moment each call ends.",
+      b: '<div id="email-list"></div><div class="prow" id="add-email-row"><div><div class="t">Add another action</div><div class="d">Send automated emails with call data and templates</div></div><span>＋</span></div>' },
+    sms: { t: "Send SMS", d: "Text the caller a confirmation or follow-up.",
+      b: '<div class="row-head"><span class="fl">Enable SMS</span><button class="fld-toggle" id="t-sms" data-key="amira_sms_on"></button></div>' +
+         '<label class="fl">Trigger</label><select class="fi" id="f-sms-trigger"><option>When a booking is confirmed</option><option>After every call</option><option>On missed call</option></select>' +
+         '<label class="fl">Message template</label><textarea class="fi" id="f-sms-template" placeholder="Hi {name}, your booking is confirmed for {date} at {time}."></textarea>' +
+         '<button class="save-mini" id="save-sms">Save</button>' },
+    book: { t: "Book appointments", d: "Let Amira book slots straight into a calendar on the call.",
+      b: '<div class="row-head"><span class="fl">Enable booking</span><button class="fld-toggle on" id="t-booking" data-key="amira_booking_on"></button></div>' +
+         '<label class="fl">Calendar</label><select class="fi" id="f-booking-cal"><option>Google Calendar</option><option>Cal.com</option><option>Outlook</option><option>Not connected</option></select>' +
+         '<label class="fl">Slot length</label><select class="fi" id="f-booking-slot"><option>15 minutes</option><option selected>30 minutes</option><option>45 minutes</option><option>60 minutes</option></select>' +
+         '<label class="fl">Booking window</label><select class="fi" id="f-booking-window"><option>Up to 7 days ahead</option><option selected>Up to 30 days ahead</option><option>Up to 90 days ahead</option></select>' +
+         '<button class="save-mini" id="save-booking">Save</button>' },
+    webhooks: { t: "Webhooks", d: "Send call events to your backend (n8n).",
+      b: '<div class="row-head"><span class="fl">Enable webhooks</span><button class="fld-toggle on" id="t-webhooks" data-key="amira_webhooks_on"></button></div>' +
+         '<label class="fl">Endpoint URL</label><input class="fi" id="f-webhooks-url" placeholder="http://localhost:5678/webhook/amira-events" />' +
+         '<label class="fl">Events sent</label><select class="fi" id="f-webhooks-events"><option>end-of-call-report</option><option>status-update</option><option>transcript</option><option>all events</option></select>' +
+         '<button class="save-mini" id="save-webhooks">Save</button>' },
+  };
+
+  var abilities = document.querySelectorAll('#tab-behaviour .ability');
+  function openPanel(key) {
+    abilities.forEach(function (a) { a.classList.toggle("on", a.dataset.key === key); });
+    if (key === "prompt") { document.getElementById("prompt-overlay").classList.add("open"); return; }
+    var p = panels[key];
+    if (!p) return;
+    document.getElementById("p-title").textContent = p.t;
+    document.getElementById("p-desc").textContent = p.d;
+    document.getElementById("p-body").innerHTML = p.b;
+
+    // Essentials: real editable business fields, restore + debounced autosave + Save.
+    var essFields = { "f-biz": "amira_biz", "f-industry": "amira_industry", "f-website": "amira_website",
+                      "f-hours": "amira_hours", "f-services": "amira_services", "f-startmsg": "amira_startmsg" };
+    var essSave = document.getElementById("save-essentials");
+    if (essSave) {
+      Object.keys(essFields).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        if (id === "f-biz") el.value = localStorage.getItem("amira_biz") || user.business || "";
+        else el.value = localStorage.getItem(essFields[id]) || "";
+        var timer;
+        el.addEventListener("input", function () {
+          clearTimeout(timer);
+          timer = setTimeout(function () { localStorage.setItem(essFields[id], el.value); }, 300);
+        });
+      });
+      essSave.addEventListener("click", function () {
+        Object.keys(essFields).forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) localStorage.setItem(essFields[id], el.value);
+        });
+        toast("Changes saved!");
+      });
+    }
+
+    var save = document.getElementById("save-info");
+    if (save) {
+      var box = document.getElementById("company-info");
+      box.value = localStorage.getItem("amira_company_info") || "";
+      save.addEventListener("click", function () {
+        localStorage.setItem("amira_company_info", box.value);
+        toast("Company info saved");
+      });
+    }
+    var voiceRow = document.getElementById("voice-row");
+    if (voiceRow) {
+      voiceRow.addEventListener("click", openVoiceModal);
+      var savedVoiceId = localStorage.getItem("amira_voice");
+      var savedVoice = VOICES.find(function (x) { return x.id === savedVoiceId; });
+      if (savedVoice) document.getElementById("voice-row-desc").textContent = savedVoice.name + " · " + savedVoice.desc;
+    }
+    if (key === "transfer") {
+      renderTransferList();
+      document.getElementById("add-transfer-row").addEventListener("click", openTransferDrawer);
+    }
+    if (key === "email") {
+      renderEmailList();
+      document.getElementById("add-email-row").addEventListener("click", openEmailDrawer);
+    }
+
+    // Universal field persistence for every panel (answers/sms/booking/webhooks).
+    Object.keys(SIMPLE_FIELDS).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.value = localStorage.getItem(SIMPLE_FIELDS[id]) || el.value;
+      var timer;
+      el.addEventListener("input", function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () { localStorage.setItem(SIMPLE_FIELDS[id], el.value); }, 300);
+      });
+    });
+    // Enable/disable toggles
+    document.querySelectorAll("#p-body .fld-toggle").forEach(function (tg) {
+      var k = tg.dataset.key;
+      if (localStorage.getItem(k) === "off") tg.classList.remove("on");
+      else if (localStorage.getItem(k) === "on") tg.classList.add("on");
+      tg.addEventListener("click", function () {
+        tg.classList.toggle("on");
+        localStorage.setItem(k, tg.classList.contains("on") ? "on" : "off");
+      });
+    });
+    // Per-panel Save buttons -> just flash the toast (values already autosaved)
+    ["save-answers", "save-sms", "save-booking", "save-webhooks"].forEach(function (bid) {
+      var b = document.getElementById(bid);
+      if (b) b.addEventListener("click", function () { saveSimpleFields(); toast("Changes saved!"); });
+    });
+    // Knowledge Base uploader (answers panel)
+    if (key === "answers") wireKB();
+  }
+
+  // Field id -> localStorage key, for the simple ability panels.
+  var SIMPLE_FIELDS = {
+    "f-answer-source": "amira_answer_source", "f-answer-faqs": "amira_answer_faqs",
+    "f-sms-trigger": "amira_sms_trigger", "f-sms-template": "amira_sms_template",
+    "f-booking-cal": "amira_booking_cal", "f-booking-slot": "amira_booking_slot",
+    "f-booking-window": "amira_booking_window",
+    "f-webhooks-url": "amira_webhooks_url", "f-webhooks-events": "amira_webhooks_events"
+  };
+  function saveSimpleFields() {
+    Object.keys(SIMPLE_FIELDS).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) localStorage.setItem(SIMPLE_FIELDS[id], el.value);
+    });
+  }
+
+  // ── Knowledge Base: drag/drop + click upload, persisted as text in localStorage ──
+  function loadKB() { try { return JSON.parse(localStorage.getItem("amira_kb") || "[]"); } catch (e) { return []; } }
+  function saveKB(docs) { localStorage.setItem("amira_kb", JSON.stringify(docs)); }
+  function renderKB() {
+    var list = document.getElementById("kb-list");
+    if (!list) return;
+    var docs = loadKB();
+    list.innerHTML = docs.map(function (d, i) {
+      return '<div class="kb-doc"><span>📄</span><span>' + (d.name || "document") + '</span>' +
+             '<span class="rm" data-i="' + i + '">✕</span></div>';
+    }).join("");
+    list.querySelectorAll(".rm").forEach(function (x) {
+      x.addEventListener("click", function () { var d = loadKB(); d.splice(+x.dataset.i, 1); saveKB(d); renderKB(); });
+    });
+  }
+  function wireKB() {
+    var drop = document.getElementById("kb-drop");
+    var input = document.getElementById("kb-input");
+    if (!drop || !input) return;
+    renderKB();
+    drop.addEventListener("click", function () { input.click(); });
+    drop.addEventListener("dragover", function (e) { e.preventDefault(); drop.classList.add("drag"); });
+    drop.addEventListener("dragleave", function () { drop.classList.remove("drag"); });
+    drop.addEventListener("drop", function (e) { e.preventDefault(); drop.classList.remove("drag"); ingest(e.dataTransfer.files); });
+    input.addEventListener("change", function () { ingest(input.files); });
+    function ingest(files) {
+      var docs = loadKB();
+      Array.prototype.forEach.call(files, function (f) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          docs.push({ name: f.name, size: f.size, type: f.type, text: String(e.target.result).slice(0, 8000) });
+          saveKB(docs); renderKB(); toast("Document added");
+        };
+        reader.readAsText(f);
+      });
+    }
+  }
+  abilities.forEach(function (a) { a.addEventListener("click", function () { openPanel(a.dataset.key); }); });
+
+  // ── voice picker modal ────────────────────────────────────
+  var VOICES = [
+    { id: "ratan", name: "Ratan", desc: "Warm male · Hindi & South Indian", lang: "multi" },
+    { id: "shubh", name: "Shubh", desc: "Confident male · Hindi & Telugu", lang: "multi" },
+    { id: "anushka", name: "Anushka", desc: "Warm female · natural Indian accent", lang: "multi" },
+    { id: "priya", name: "Priya", desc: "Bright female · English & Hindi", lang: "en" },
+    { id: "kavya", name: "Kavya", desc: "Calm female · Tamil & English", lang: "ta" },
+    { id: "rahul", name: "Rahul", desc: "Friendly male · English", lang: "en" },
+    { id: "arya", name: "Arya", desc: "Crisp female · Hindi", lang: "hi" },
+    { id: "vijay", name: "Vijay", desc: "Deep male · Tamil", lang: "ta" }
+  ];
+  var voiceOverlay = document.getElementById("voice-overlay");
+  var voiceList = document.getElementById("voice-list");
+  var voiceLangFilter = document.getElementById("v-lang-filter");
+  var voiceScope = "all";
+  var selectedVoice = localStorage.getItem("amira_voice") || "anushka";
+
+  function renderVoiceList() {
+    var lang = voiceLangFilter.value;
+    var pool = VOICES.filter(function (v) { return lang === "multi" ? true : v.lang === lang || v.lang === "multi"; });
+    if (voiceScope === "popular") pool = pool.slice(0, 4);
+    voiceList.innerHTML = pool.map(function (v) {
+      return '<div class="v-row' + (v.id === selectedVoice ? ' sel' : '') + '" data-voice="' + v.id + '">' +
+        '<span class="av">' + v.name.slice(0, 1) + '</span>' +
+        '<div><div class="vn">' + v.name + '</div><div class="vd">' + v.desc + '</div></div>' +
+        '<span class="vr"></span></div>';
+    }).join("");
+    voiceList.querySelectorAll(".v-row").forEach(function (row) {
+      row.addEventListener("click", function () {
+        selectedVoice = row.dataset.voice;
+        renderVoiceList();
+      });
+    });
+  }
+  function openVoiceModal() {
+    renderVoiceList();
+    voiceOverlay.classList.add("open");
+  }
+  document.querySelectorAll(".v-scope").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".v-scope").forEach(function (b) { b.classList.toggle("on", b === btn); });
+      voiceScope = btn.dataset.scope;
+      renderVoiceList();
+    });
+  });
+  voiceLangFilter.addEventListener("change", renderVoiceList);
+  document.getElementById("voice-cancel").addEventListener("click", function () { voiceOverlay.classList.remove("open"); });
+  voiceOverlay.addEventListener("click", function (e) { if (e.target === voiceOverlay) voiceOverlay.classList.remove("open"); });
+  document.getElementById("voice-save").addEventListener("click", function () {
+    localStorage.setItem("amira_voice", selectedVoice);
+    var v = VOICES.find(function (x) { return x.id === selectedVoice; });
+    var desc = document.getElementById("voice-row-desc");
+    if (v && desc) desc.textContent = v.name + " · " + v.desc;
+    voiceOverlay.classList.remove("open");
+    toast("Voice updated");
+  });
+
+  // ── transfer calls drawer ─────────────────────────────────
+  var transferTargets = JSON.parse(localStorage.getItem("amira_transfers") || "[]");
+  var trDrawerBg = document.getElementById("transfer-drawer-bg");
+  var trTargetType = "user";
+  document.querySelectorAll("#tr-seg button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#tr-seg button").forEach(function (b) { b.classList.toggle("on", b === btn); });
+      trTargetType = btn.dataset.t;
+      var f = document.getElementById("tr-target-field");
+      var labels = { user: "Team member", phone: "Phone number", sip: "SIP address" };
+      var placeholders = { user: "Select a team member…", phone: "+91 98765 43210", sip: "sip:name@domain.com" };
+      f.querySelector("label").textContent = labels[trTargetType];
+      f.querySelector("input").placeholder = placeholders[trTargetType];
+    });
+  });
+  ["tr-t-calendar", "tr-t-notify"].forEach(function (id) {
+    document.getElementById(id).addEventListener("click", function () { this.classList.toggle("on"); });
+  });
+  function renderTransferList() {
+    var list = document.getElementById("transfer-list");
+    if (!list) return;
+    list.innerHTML = transferTargets.map(function (t, i) {
+      return '<div class="target-row"><div><div class="tn">' + esc(t.owner || "Untitled") + '</div><div class="tp">' + esc(t.number) + '</div></div><button class="rm" data-i="' + i + '">✕</button></div>';
+    }).join("");
+    list.querySelectorAll(".rm").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        transferTargets.splice(+btn.dataset.i, 1);
+        localStorage.setItem("amira_transfers", JSON.stringify(transferTargets));
+        renderTransferList();
+      });
+    });
+  }
+  function openTransferDrawer() {
+    document.getElementById("tr-owner").value = "";
+    document.getElementById("tr-number").value = "";
+    document.getElementById("tr-condition").value = "";
+    trDrawerBg.classList.add("open");
+  }
+  document.getElementById("transfer-drawer-x").addEventListener("click", function () { trDrawerBg.classList.remove("open"); });
+  trDrawerBg.addEventListener("click", function (e) { if (e.target === trDrawerBg) trDrawerBg.classList.remove("open"); });
+  document.getElementById("tr-save").addEventListener("click", function () {
+    var owner = document.getElementById("tr-owner").value.trim();
+    var number = document.getElementById("tr-number").value.trim();
+    if (!number) { document.getElementById("tr-number").focus(); return; }
+    transferTargets.push({ owner: owner, number: number, type: trTargetType, condition: document.getElementById("tr-condition").value.trim() });
+    localStorage.setItem("amira_transfers", JSON.stringify(transferTargets));
+    renderTransferList();
+    trDrawerBg.classList.remove("open");
+    toast("Transfer target created");
+  });
+
+  // ── send email drawer ─────────────────────────────────────
+  var emailActions = JSON.parse(localStorage.getItem("amira_emails") || "[]");
+  var emDrawerBg = document.getElementById("email-drawer-bg");
+  function renderEmailList() {
+    var list = document.getElementById("email-list");
+    if (!list) return;
+    list.innerHTML = emailActions.map(function (a, i) {
+      return '<div class="target-row"><div><div class="tn">' + esc(a.name || "Untitled action") + '</div><div class="tp">' + esc(a.recipients) + '</div></div><button class="rm" data-i="' + i + '">✕</button></div>';
+    }).join("");
+    list.querySelectorAll(".rm").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        emailActions.splice(+btn.dataset.i, 1);
+        localStorage.setItem("amira_emails", JSON.stringify(emailActions));
+        renderEmailList();
+      });
+    });
+  }
+  function openEmailDrawer() {
+    document.getElementById("em-name").value = "";
+    document.getElementById("em-subject").value = "Amira — Call Received";
+    document.getElementById("em-recipients").value = "";
+    document.getElementById("em-condition").value = "";
+    emDrawerBg.classList.add("open");
+  }
+  document.getElementById("email-drawer-x").addEventListener("click", function () { emDrawerBg.classList.remove("open"); });
+  emDrawerBg.addEventListener("click", function (e) { if (e.target === emDrawerBg) emDrawerBg.classList.remove("open"); });
+  document.getElementById("em-save").addEventListener("click", function () {
+    var recipients = document.getElementById("em-recipients").value.trim();
+    if (!recipients) { document.getElementById("em-recipients").focus(); return; }
+    emailActions.push({
+      name: document.getElementById("em-name").value.trim(),
+      subject: document.getElementById("em-subject").value.trim(),
+      recipients: recipients,
+      condition: document.getElementById("em-condition").value.trim(),
+      content: document.getElementById("em-content").value.trim()
+    });
+    localStorage.setItem("amira_emails", JSON.stringify(emailActions));
+    renderEmailList();
+    emDrawerBg.classList.remove("open");
+    toast("Email action saved");
+  });
+
+  // ── assign number modal ───────────────────────────────────
+  var assignOverlay = document.getElementById("assign-overlay");
+  document.getElementById("assign-btn").addEventListener("click", function () {
+    var owned = localStorage.getItem("amira_number_purchased") === "1";
+    document.getElementById("assign-quota-warning").style.display = owned ? "block" : "none";
+    assignOverlay.classList.add("open");
+  });
+  document.getElementById("assign-cancel").addEventListener("click", function () { assignOverlay.classList.remove("open"); });
+  assignOverlay.addEventListener("click", function (e) { if (e.target === assignOverlay) assignOverlay.classList.remove("open"); });
+  document.getElementById("assign-buy").addEventListener("click", function () {
+    localStorage.setItem("amira_number_purchased", "1");
+    assignOverlay.classList.remove("open");
+    toast("Number purchased!");
+  });
+
+  openPanel("essentials");
+
+  // ── custom prompt modal ──────────────────────────────────
+  var overlay = document.getElementById("prompt-overlay");
+  var promptBox = document.getElementById("prompt-text");
+  promptBox.value = localStorage.getItem("amira_custom_prompt") || "";
+  document.getElementById("prompt-cancel").addEventListener("click", function () { overlay.classList.remove("open"); });
+  overlay.addEventListener("click", function (e) { if (e.target === overlay) overlay.classList.remove("open"); });
+  document.getElementById("prompt-save").addEventListener("click", function () {
+    localStorage.setItem("amira_custom_prompt", promptBox.value);
+    overlay.classList.remove("open");
+    toast("Custom instructions saved");
+  });
+
+  // ── real test call (n8n → pipecat, same flow as the landing demo) ──
+  var START_WEBHOOK_URL = "http://localhost:5678/webhook/amira-start";
+  var PIPECAT_BASE_URL = "http://localhost:8000";
+  var testBtn = document.getElementById("test-btn");
+  var status = document.getElementById("cb-status");
+  var livecard = document.getElementById("livecard");
+  var liveLines = document.getElementById("live-lines");
+  var remoteAudio = document.getElementById("remoteAudio");
+  var pc = null, micStream = null, dc = null, live = false, connecting = false, stopping = false, muted = false;
+  var partialEls = { user: null, bot: null };
+  var currentCallId = null, callTranscript = [], mediaRecorder = null, recordingChunks = [];
+  var recordingContext = null, recordingDestination = null;
+  var muteBtn = document.getElementById("mute-btn");
+
+  function addLine(speaker, text, partial) {
+    var slot = partialEls[speaker];
+    if (!slot) {
+      var p = document.createElement("p");
+      var label = document.createElement("span");
+      label.style.cssText = "font-weight:600;color:" + (speaker === "bot" ? "var(--accent)" : "#a3d9a5") + ";";
+      label.textContent = speaker === "bot" ? "Amira: " : "You: ";
+      var body = document.createElement("span");
+      p.appendChild(label); p.appendChild(body);
+      liveLines.appendChild(p);
+      slot = partialEls[speaker] = body;
+    }
+    slot.textContent = text;
+    slot.style.opacity = partial ? ".65" : "1";
+    if (!partial) partialEls[speaker] = null;
+    livecard.scrollTop = livecard.scrollHeight;
+  }
+
+  function handleRTVI(raw) {
+    var msg; try { msg = JSON.parse(raw); } catch (e) { return; }
+    if (msg.label !== "rtvi-ai") return;
+    var d = msg.data || {};
+    if (msg.type === "user-transcription" && d.text && d.text.trim()) addLine("user", d.text.trim(), !d.final);
+    if (msg.type === "bot-transcription" && d.text && d.text.trim()) addLine("bot", d.text.trim(), false);
+    var text = (d.text || "").trim();
+    if (text && d.final !== false && (msg.type === "user-transcription" || msg.type === "bot-transcription")) {
+      var speaker = msg.type === "user-transcription" ? "caller" : "assistant";
+      var previous = callTranscript[callTranscript.length - 1];
+      if (!previous || previous.speaker !== speaker || previous.text !== text) callTranscript.push({ speaker: speaker, text: text, at: new Date().toISOString() });
+    }
+  }
+
+  function setLive(on) {
+    live = on;
+    testBtn.textContent = on ? "End call" : "Test call";
+    testBtn.classList.toggle("live", on);
+    status.textContent = on ? "on a test call" : "";
+    livecard.classList.toggle("open", on);
+    if (!on) { liveLines.innerHTML = ""; partialEls = { user: null, bot: null }; }
+  }
+
+  function attachRecordingStream(stream) {
+    if (!recordingContext || !recordingDestination || !stream || !stream.getAudioTracks().length) return;
+    recordingContext.createMediaStreamSource(stream).connect(recordingDestination);
+  }
+
+  function finishRecording() {
+    if (!mediaRecorder || mediaRecorder.state === "inactive") return Promise.resolve(null);
+    return new Promise(function (resolve) {
+      mediaRecorder.addEventListener("stop", function () { resolve(recordingChunks.length ? new Blob(recordingChunks, { type: mediaRecorder.mimeType || "audio/webm" }) : null); }, { once: true });
+      mediaRecorder.stop();
+    });
+  }
+
+  async function cleanup() {
+    if (stopping) return;
+    stopping = true; testBtn.disabled = true; muteBtn.disabled = true;
+    var recording = await finishRecording();
+    if (micStream) micStream.getTracks().forEach(function (t) { t.stop(); });
+    if (dc) try { dc.close(); } catch (_) {}
+    if (pc) pc.close();
+    if (recordingContext) try { await recordingContext.close(); } catch (_) {}
+    if (currentCallId) try {
+      if (recording) await fetch(PIPECAT_BASE_URL + "/calls/" + currentCallId + "/recording", { method: "POST", headers: { "Content-Type": recording.type || "audio/webm" }, body: recording });
+      await fetch(PIPECAT_BASE_URL + "/calls/" + currentCallId + "/complete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ transcript: callTranscript }) });
+    } catch (err) { console.error("Could not finalize call history", err); }
+    pc = micStream = dc = null;
+    connecting = false;
+    mediaRecorder = recordingContext = recordingDestination = null; recordingChunks = []; currentCallId = null; callTranscript = []; muted = false;
+    muteBtn.textContent = "Mute";
+    setLive(false);
+    testBtn.disabled = false; stopping = false;
+    loadCallHistory();
+  }
+
+  function waitIce(pc) {
+    if (pc.iceGatheringState === "complete") return Promise.resolve();
+    return new Promise(function (res) {
+      function check() { if (pc.iceGatheringState === "complete") { pc.removeEventListener("icegatheringstatechange", check); res(); } }
+      pc.addEventListener("icegatheringstatechange", check);
+      setTimeout(res, 2000);
+    });
+  }
+
+  // Assemble the tenant config the bot expects (bot.py _build_system_prompt schema),
+  // sourced from everything the dashboard has saved. Passing this makes the test call
+  // use the RECEPTIONIST persona with the business's own info — not the demo persona.
+  function ls(key) { return localStorage.getItem(key) || ""; }
+  function buildAssistantConfig() {
+    var lang = document.getElementById("test-lang").value;
+    return {
+      assistant: {
+        name: ls("amira_assistant_name") || "Amira",
+        firstMessage: ls("amira_startmsg"),     // blank -> bot falls back to per-language greeting
+        systemPrompt: ls("amira_custom_prompt"),
+        voice: ls("amira_voice"),
+        language: lang
+      },
+      company: {
+        name: ls("amira_biz") || user.business || "",
+        industry: ls("amira_industry"),
+        website: ls("amira_website"),
+        locationHours: ls("amira_hours"),
+        servicesPolicies: ls("amira_services") || ls("amira_company_info")
+      },
+      abilities: {
+        answerQuestions: { enabled: true, knowledgeSource: ls("amira_answer_source"), qa: ls("amira_answer_faqs") || ls("amira_company_info") },
+        sendSms: { enabled: ls("amira_sms_on") === "on", trigger: ls("amira_sms_trigger"), template: ls("amira_sms_template") },
+        bookAppointments: { enabled: ls("amira_booking_on") !== "off", calendar: ls("amira_booking_cal"), slotLength: ls("amira_booking_slot"), bookingWindow: ls("amira_booking_window") },
+        webhooks: { enabled: ls("amira_webhooks_on") !== "off", endpointUrl: ls("amira_webhooks_url"), events: ls("amira_webhooks_events") }
+      },
+      knowledgeBase: (function () { try { return JSON.parse(localStorage.getItem("amira_kb") || "[]"); } catch (e) { return []; } })(),
+      meta: { source: "Amira Dashboard" }
+    };
+  }
+
+  // Multiple assistants are browser-local for the prototype. Each record snapshots all
+  // dashboard configuration keys, so loading one restores every ability and business field.
+  var ASSISTANTS_KEY = "amiraSavedAssistants", ACTIVE_KEY = "amiraActiveAssistantId";
+  var savedAssistants = [], activeAssistantId = localStorage.getItem(ACTIVE_KEY) || "";
+  try { savedAssistants = JSON.parse(localStorage.getItem(ASSISTANTS_KEY) || "[]"); } catch (_) { savedAssistants = []; }
+  function snapshotStorage() {
+    var values = {};
+    for (var i = 0; i < localStorage.length; i++) { var key = localStorage.key(i); if (key && key.indexOf("amira_") === 0 && key !== ASSISTANTS_KEY && key !== ACTIVE_KEY) values[key] = localStorage.getItem(key); }
+    return values;
+  }
+  function renderAssistantOptions() {
+    var select = document.getElementById("assistant-select");
+    select.innerHTML = '<option value="">Unsaved draft</option>';
+    savedAssistants.forEach(function (item) { var option = document.createElement("option"); option.value = item.id; option.textContent = item.name || "Untitled assistant"; select.appendChild(option); });
+    select.value = activeAssistantId;
+  }
+  document.getElementById("save-assistant").addEventListener("click", function () {
+    var suggested = ls("amira_assistant_name") || "Amira";
+    var name = prompt("Assistant name", suggested); if (!name) return;
+    localStorage.setItem("amira_assistant_name", name);
+    if (!activeAssistantId) activeAssistantId = (crypto.randomUUID ? crypto.randomUUID() : "assistant-" + Date.now());
+    var record = { id: activeAssistantId, name: name, updatedAt: new Date().toISOString(), storage: snapshotStorage(), config: buildAssistantConfig() };
+    var index = savedAssistants.findIndex(function (item) { return item.id === activeAssistantId; });
+    if (index >= 0) savedAssistants[index] = record; else savedAssistants.push(record);
+    localStorage.setItem(ASSISTANTS_KEY, JSON.stringify(savedAssistants)); localStorage.setItem(ACTIVE_KEY, activeAssistantId);
+    document.querySelector("h1").firstChild.nodeValue = "Edit ‘" + name + "’ "; document.getElementById("save-state").textContent = "Saved"; renderAssistantOptions(); toast("Assistant saved");
+  });
+  document.getElementById("assistant-select").addEventListener("change", function (event) {
+    activeAssistantId = event.target.value; localStorage.setItem(ACTIVE_KEY, activeAssistantId);
+    var record = savedAssistants.find(function (item) { return item.id === activeAssistantId; }); if (!record) return;
+    Object.keys(record.storage || {}).forEach(function (key) { localStorage.setItem(key, record.storage[key]); }); location.reload();
+  });
+  document.getElementById("new-assistant").addEventListener("click", async function () {
+    if (live) await cleanup();
+    activeAssistantId = ""; localStorage.removeItem(ACTIVE_KEY);
+    ["amira_assistant_name","amira_biz","amira_industry","amira_website","amira_hours","amira_services","amira_startmsg","amira_custom_prompt","amira_answer_source","amira_answer_faqs","amira_kb"].forEach(function (key) { localStorage.removeItem(key); });
+    location.reload();
+  });
+  renderAssistantOptions();
+  var activeRecord = savedAssistants.find(function (item) { return item.id === activeAssistantId; });
+  if (activeRecord && activeRecord.name) document.querySelector("h1").firstChild.nodeValue = "Edit ‘" + activeRecord.name + "’ ";
+
+  var GREETINGS = {
+    en:function(c,a){return "Thank you for calling " + c + ". This is " + a + ". How can I help you today?";},
+    hi:function(c,a){return c + " में कॉल करने के लिए धन्यवाद। मैं " + a + " हूँ। मैं आपकी कैसे मदद कर सकता हूँ?";},
+    ta:function(c,a){return c + "-க்கு call பண்ணதுக்கு நன்றி. நான் " + a + ". உங்களுக்கு எப்படி help பண்ணலாம்?";},
+    te:function(c,a){return c + "కి call చేసినందుకు ధన్యవాదాలు. నేను " + a + ". మీకు ఎలా సహాయం చేయగలను?";},
+    kn:function(c,a){return c + "ಗೆ call ಮಾಡಿದ್ದಕ್ಕೆ ಧನ್ಯವಾದಗಳು. ನಾನು " + a + ". ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?";},
+    bn:function(c,a){return c + "-তে কল করার জন্য ধন্যবাদ। আমি " + a + "। আপনাকে কীভাবে সাহায্য করতে পারি?";},
+    mr:function(c,a){return c + " ला कॉल केल्याबद्दल धन्यवाद. मी " + a + ". मी तुम्हाला कशी मदत करू?";},
+    gu:function(c,a){return c + "ને call કરવા બદલ આભાર. હું " + a + ". હું તમારી કેવી રીતે મદદ કરી શકું?";},
+    ml:function(c,a){return c + "-ലേക്ക് call ചെയ്തതിന് നന്ദി. ഞാൻ " + a + ". എങ്ങനെ സഹായിക്കാം?";},
+    pa:function(c,a){return c + " ਨੂੰ call ਕਰਨ ਲਈ ਧੰਨਵਾਦ। ਮੈਂ " + a + " ਹਾਂ। ਮੈਂ ਤੁਹਾਡੀ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ?";},
+    od:function(c,a){return c + "କୁ call କରିଥିବାରୁ ଧନ୍ୟବାଦ। ମୁଁ " + a + "। ମୁଁ କିପରି ସାହାଯ୍ୟ କରିପାରିବି?";}
+  };
+  document.getElementById("test-lang").value = ls("amira_language") || "en";
+  document.getElementById("test-lang").addEventListener("change", function (event) {
+    var lang = event.target.value, company = ls("amira_biz") || user.business || "our company", assistant = ls("amira_assistant_name") || "Amira";
+    localStorage.setItem("amira_language", lang); localStorage.setItem("amira_startmsg", (GREETINGS[lang] || GREETINGS.en)(company, assistant));
+    toast("Language and greeting updated");
+  });
+
+  async function startTest() {
+    connecting = true;
+    testBtn.disabled = true;
+    status.textContent = "connecting…";
+    try {
+      var cfg = buildAssistantConfig();
+      var startRes = await fetch(START_WEBHOOK_URL, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: user.business || "Dashboard test", language: document.getElementById("test-lang").value, assistantConfig: cfg })
+      });
+      var session = await startRes.json();
+      if (!startRes.ok || !session.success) throw new Error("session failed");
+
+      var callStart = await fetch(PIPECAT_BASE_URL + "/calls/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ assistant_name: cfg.assistant.name, company_name: cfg.company.name, language: cfg.assistant.language }) });
+      if (callStart.ok) currentCallId = (await callStart.json()).id;
+      callTranscript = []; recordingChunks = [];
+
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+      recordingContext = new AudioContext(); recordingDestination = recordingContext.createMediaStreamDestination(); attachRecordingStream(micStream);
+      var mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm";
+      mediaRecorder = new MediaRecorder(recordingDestination.stream, { mimeType: mimeType });
+      mediaRecorder.ondataavailable = function (event) { if (event.data.size) recordingChunks.push(event.data); }; mediaRecorder.start(1000);
+      pc = new RTCPeerConnection({ iceServers: session.iceConfig.iceServers });
+      dc = pc.createDataChannel("pipecat-ai");
+      dc.onmessage = function (e) { handleRTVI(e.data); };
+      micStream.getTracks().forEach(function (t) { pc.addTrack(t, micStream); });
+      pc.ontrack = function (e) { remoteAudio.srcObject = e.streams[0]; attachRecordingStream(e.streams[0]); remoteAudio.play().catch(function () {}); };
+      pc.onconnectionstatechange = function () {
+        if (live && ["failed", "disconnected", "closed"].indexOf(pc && pc.connectionState) >= 0) cleanup();
+      };
+
+      var offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await waitIce(pc);
+      var offerRes = await fetch(PIPECAT_BASE_URL + "/sessions/" + session.sessionId + "/api/offer", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sdp: pc.localDescription.sdp, type: pc.localDescription.type, language: document.getElementById("test-lang").value })
+      });
+      if (!offerRes.ok) throw new Error("offer failed");
+      await pc.setRemoteDescription(await offerRes.json());
+      setLive(true);
+      muteBtn.disabled = false;
+    } catch (err) {
+      console.error("Test call error:", err);
+      cleanup();
+      status.textContent = "couldn't connect — is the server running?";
+      setTimeout(function () { if (!live) status.textContent = ""; }, 4000);
+    } finally {
+      connecting = false;
+      testBtn.disabled = false;
+    }
+  }
+
+  testBtn.addEventListener("click", function () {
+    if (live) { cleanup(); return; }
+    if (!connecting) startTest();
+  });
+  muteBtn.addEventListener("click", function () {
+    if (!micStream) return; muted = !muted;
+    micStream.getAudioTracks().forEach(function (track) { track.enabled = !muted; });
+    muteBtn.textContent = muted ? "Unmute" : "Mute";
+  });
+
+  function historyEsc(value) { return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) { return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch]; }); }
+  async function loadCallHistory() {
+    var list = document.getElementById("call-history-list");
+    try {
+      var response = await fetch(PIPECAT_BASE_URL + "/calls"); if (!response.ok) throw new Error("history unavailable");
+      var calls = await response.json();
+      if (!calls.length) { list.innerHTML = '<div class="empty-history">No browser test calls yet. Start one and it will appear here.</div>'; return; }
+      list.innerHTML = calls.map(function (call) {
+        var when = new Date(call.started_at * 1000).toLocaleString();
+        var duration = Math.floor(call.duration_seconds / 60) + ":" + String(Math.round(call.duration_seconds % 60)).padStart(2, "0");
+        var transcript = (call.transcript || []).map(function (line) { return '<div class="transcript-line"><b>' + historyEsc(line.speaker) + ':</b> ' + historyEsc(line.text) + '</div>'; }).join("") || '<div class="history-meta">No transcript captured.</div>';
+        var audio = call.has_recording ? '<audio controls preload="none" style="width:100%;" src="' + PIPECAT_BASE_URL + '/calls/' + encodeURIComponent(call.id) + '/recording"></audio>' : '<div class="history-meta">No recording available.</div>';
+        return '<div class="history-card"><div class="history-row"><div><b>' + historyEsc(call.assistant_name) + '</b><div class="history-meta">' + historyEsc(call.company_name) + '</div></div><div>' + historyEsc(when) + '</div><div>' + historyEsc(String(call.language || "").toUpperCase()) + '</div><div>' + duration + '</div><div>₹' + Number(call.estimated_cost_inr || 0).toFixed(2) + ' ▾</div></div><div class="history-detail"><div class="history-section"><h4>Outcome</h4><div>' + historyEsc(call.outcome || "Pending") + '</div></div><div class="history-section"><h4>Summary</h4><div>' + historyEsc(call.summary || "Summary pending") + '</div></div><div class="history-section"><h4>Recording</h4>' + audio + '</div><div class="history-section"><h4>Full transcript</h4>' + transcript + '</div><div class="history-meta">Estimated browser-test cost based on configured STT/TTS rates.</div></div></div>';
+      }).join("");
+      list.querySelectorAll(".history-row").forEach(function (row) { row.addEventListener("click", function () { row.parentElement.classList.toggle("open"); }); });
+    } catch (err) { list.innerHTML = '<div class="empty-history">Could not load call history. Make sure the voice backend is running.</div>'; }
+  }
+  function showView(history) {
+    document.getElementById("assistant-view").classList.toggle("view-hidden", history);
+    document.getElementById("history-view").classList.toggle("view-hidden", !history);
+    document.getElementById("nav-assistants").classList.toggle("on", !history);
+    document.getElementById("nav-history").classList.toggle("on", history);
+    document.querySelector(".callbar").classList.toggle("view-hidden", history);
+    if (history) loadCallHistory();
+  }
+  document.getElementById("nav-history").addEventListener("click", function () { showView(true); });
+  document.getElementById("nav-assistants").addEventListener("click", function () { showView(false); });
+  document.getElementById("refresh-history").addEventListener("click", loadCallHistory);
+})();
+</script>
+</body>
+</html>

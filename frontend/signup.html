@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Create your account — Amira</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --accent: #ef5b2b; --ink: #17130f; --paper: #f6f1e9; --card: #fbf7ef; --border: #e0d6c6; --muted: #8a8078; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Space Grotesk', system-ui, sans-serif; background: var(--paper); color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .split { display: grid; grid-template-columns: 1.05fr .95fr; min-height: 100vh; }
+  .pane-form { display: flex; flex-direction: column; padding: 28px clamp(24px,6vw,88px); }
+  .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+  .brand .mark { width: 30px; height: 30px; border-radius: 9px; background: var(--accent); display: inline-flex; align-items: center; justify-content: center; }
+  .brand .word { font-family: 'Instrument Serif', serif; font-size: 28px; line-height: 1; }
+  .form-wrap { max-width: 440px; width: 100%; margin: auto 0; padding: 48px 0; }
+  h1 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: clamp(36px,4vw,48px); letter-spacing: -.02em; margin: 0 0 8px; }
+  .sub { color: #6b6156; font-size: 15px; margin: 0 0 32px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: #574f45; margin: 0 0 7px; }
+  .field { margin-bottom: 18px; }
+  input { width: 100%; font-family: inherit; font-size: 15px; padding: 13px 15px; border: 1.5px solid #ddd3c3; border-radius: 12px; background: #fff; color: var(--ink); transition: border-color .2s, box-shadow .2s; }
+  input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+  .err { display: none; color: #b4232a; font-size: 13px; margin-top: 6px; }
+  .field.bad input { border-color: #b4232a; }
+  .field.bad .err { display: block; }
+  .cta { width: 100%; margin-top: 8px; background: var(--accent); color: #fff; border: none; border-radius: 100px; padding: 15px; font-family: inherit; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform .2s, box-shadow .2s; }
+  .cta:hover { transform: translateY(-2px); box-shadow: 0 14px 30px color-mix(in srgb, var(--accent) 40%, transparent); }
+  .alt { text-align: center; font-size: 14px; color: var(--muted); margin-top: 20px; }
+  .alt a { color: var(--ink); font-weight: 600; text-decoration: none; border-bottom: 1.5px solid var(--accent); cursor: pointer; }
+  .pane-side { background: var(--ink); color: #f6f1e9; display: flex; flex-direction: column; justify-content: center; padding: clamp(32px,6vw,80px); position: relative; overflow: hidden; }
+  .pane-side::before { content: ''; position: absolute; top: -140px; right: -100px; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--accent) 35%, transparent), transparent 70%); filter: blur(40px); }
+  .stars { color: var(--accent); font-size: 22px; letter-spacing: 3px; margin-bottom: 22px; }
+  blockquote { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: clamp(24px,2.4vw,34px); line-height: 1.25; letter-spacing: -.01em; margin: 0 0 28px; position: relative; }
+  .who { display: flex; align-items: center; gap: 14px; }
+  .who .av { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #e8a87c, #d97742); display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 16px; }
+  .who .nm { font-weight: 600; font-size: 15px; }
+  .who .rl { font-size: 13px; color: #a79f95; }
+  .side-stats { display: flex; gap: 36px; margin-top: 48px; padding-top: 28px; border-top: 1px solid #322920; position: relative; }
+  .side-stats .num { font-family: 'Instrument Serif', serif; font-size: 34px; line-height: 1; }
+  .side-stats .lbl { font-size: 13px; color: #a79f95; margin-top: 5px; }
+  @media (max-width: 860px) { .split { grid-template-columns: 1fr; } .pane-side { display: none; } }
+</style>
+</head>
+<body>
+<div class="split">
+  <div class="pane-form">
+    <a class="brand" href="index.html">
+      <span class="mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+      <span class="word">Amira</span>
+    </a>
+
+    <div class="form-wrap">
+      <h1 id="form-title">Create your account</h1>
+      <p class="sub" id="form-sub">Two minutes to set up. Your receptionist answers today.</p>
+
+      <div class="field" id="f-business">
+        <label>Business name</label>
+        <input id="in-business" type="text" placeholder="Saffron House" />
+        <div class="err">Business name is required</div>
+      </div>
+      <div class="field" id="f-phone">
+        <label>Contact phone number</label>
+        <input id="in-phone" type="tel" placeholder="+91 98765 43210" inputmode="tel" />
+        <div class="err">Enter a valid phone number</div>
+      </div>
+      <div class="field" id="f-email">
+        <label>Email</label>
+        <input id="in-email" type="email" placeholder="you@business.com" />
+        <div class="err">Enter a valid email address</div>
+      </div>
+      <div class="field" id="f-password">
+        <label>Password</label>
+        <input id="in-password" type="password" placeholder="At least 8 characters" />
+        <div class="err">Password must be at least 8 characters</div>
+      </div>
+
+      <button class="cta" id="submit-btn">Continue</button>
+      <p class="alt" id="mode-toggle">Already have an account? <a id="toggle-link">Log in</a></p>
+    </div>
+  </div>
+
+  <div class="pane-side">
+    <div class="stars">★★★★★</div>
+    <blockquote>"Friday dinner rush used to mean twenty missed reservation calls. Now Amira takes every single one — it paid for itself the first weekend."</blockquote>
+    <div class="who">
+      <span class="av">AS</span>
+      <div>
+        <div class="nm">Arjun Sethi</div>
+        <div class="rl">Restaurant owner · Delhi</div>
+      </div>
+    </div>
+    <div class="side-stats">
+      <div><div class="num">1 ring</div><div class="lbl">average pickup</div></div>
+      <div><div class="num">11</div><div class="lbl">languages</div></div>
+      <div><div class="num">24/7</div><div class="lbl">always on</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var login = location.hash === "#login";
+  var plan = new URLSearchParams(location.search).get("plan") || "";
+
+  var title = document.getElementById("form-title");
+  var sub = document.getElementById("form-sub");
+  var toggle = document.getElementById("toggle-link");
+  var modeToggle = document.getElementById("mode-toggle");
+  var btn = document.getElementById("submit-btn");
+  var fBusiness = document.getElementById("f-business");
+  var fPhone = document.getElementById("f-phone");
+
+  function render() {
+    title.textContent = login ? "Welcome back" : "Create your account";
+    sub.textContent = login ? "Log in to manage your receptionist." : "Two minutes to set up. Your receptionist answers today.";
+    btn.textContent = login ? "Log in" : "Continue";
+    fBusiness.style.display = login ? "none" : "";
+    fPhone.style.display = login ? "none" : "";
+    modeToggle.childNodes[0].textContent = login ? "New to Amira? " : "Already have an account? ";
+    toggle.textContent = login ? "Create an account" : "Log in";
+  }
+  toggle.addEventListener("click", function () { login = !login; render(); });
+  render();
+
+  function bad(id, isBad) { document.getElementById(id).classList.toggle("bad", isBad); return isBad; }
+
+  btn.addEventListener("click", function () {
+    var business = document.getElementById("in-business").value.trim();
+    var phone = document.getElementById("in-phone").value.trim();
+    var email = document.getElementById("in-email").value.trim();
+    var password = document.getElementById("in-password").value;
+
+    var invalid = false;
+    if (!login) {
+      invalid = bad("f-business", !business) | bad("f-phone", !/^[+\d][\d\s-]{7,}$/.test(phone)) | invalid;
+    }
+    invalid = bad("f-email", !/^\S+@\S+\.\S+$/.test(email)) | invalid;
+    invalid = bad("f-password", password.length < 8) | invalid;
+    if (invalid) return;
+
+    var existing = {};
+    try { existing = JSON.parse(localStorage.getItem("amira_user") || "{}"); } catch (e) {}
+    var user = login
+      ? Object.assign(existing, { email: email })
+      : { business: business, phone: phone, email: email };
+    localStorage.setItem("amira_user", JSON.stringify(user));
+
+    if (login && localStorage.getItem("amira_plan")) {
+      location.href = "dashboard.html";
+    } else {
+      location.href = "plan.html" + (plan ? "?plan=" + plan : "");
+    }
+  });
+})();
+</script>
+</body>
+</html>
