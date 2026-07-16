@@ -15,6 +15,7 @@ knowledge-base documents as source-of-truth context. See `_build_system_prompt`.
 """
 
 import os
+import re
 
 from dotenv import load_dotenv
 from loguru import logger
@@ -24,7 +25,16 @@ load_dotenv()
 
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.audio.vad.vad_analyzer import VADParams
-from pipecat.frames.frames import TTSSpeakFrame
+from pipecat.frames.frames import (
+    BotStoppedSpeakingFrame,
+    Frame,
+    LLMFullResponseEndFrame,
+    LLMFullResponseStartFrame,
+    LLMMessagesAppendFrame,
+    LLMTextFrame,
+    TTSSpeakFrame,
+    UserStartedSpeakingFrame,
+)
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineParams, PipelineWorker
 from pipecat.processors.aggregators.llm_context import LLMContext
@@ -32,7 +42,12 @@ from pipecat.processors.aggregators.llm_response_universal import (
     LLMContextAggregatorPair,
     LLMUserAggregatorParams,
 )
-from pipecat.processors.frameworks.rtvi import RTVIObserver, RTVIProcessor
+from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
+from pipecat.processors.frameworks.rtvi import (
+    RTVIObserver,
+    RTVIProcessor,
+    RTVIServerMessageFrame,
+)
 from pipecat.services.groq.llm import GroqLLMService
 from pipecat.services.sarvam.stt import SarvamSTTService
 from pipecat.services.sarvam.tts import SarvamTTSService
@@ -63,6 +78,25 @@ _PRODUCT_BASE = (
     "gently steer toward booking a demo. To book: collect their name, then email, then "
     "business type — one item at a time, and repeat the email back to confirm it before "
     "moving on. Once booked, or if they decline twice, thank them warmly and wrap up. "
+
+    "SITE TOUR: If they ask about a specific thing (pricing, reviews, how it works, etc) or "
+    "agree to see the website, put a hidden token as the very first characters of that reply, "
+    "before any words: [[show:ID]], where ID is one of hero, booking, voice, testimonials, "
+    "howitworks, pricing, demo (pick whichever section fits what you're about to say). The "
+    "token is stripped before you're heard, so never say it aloud. Follow it with your normal "
+    "short spoken sentence. Use at most one token per reply. Example — they ask about cost, "
+    "you reply: '[[show:pricing]] Starter plan is 1999 rupees a month.' They ask about "
+    "reviews: '[[show:testimonials]] Salon and clinic owners love her.' "
+    "If they agree to a FULL walkthrough of the site (not just one specific question), go "
+    "through every section above in exactly this order, one per reply: hero, booking, voice, "
+    "testimonials, howitworks, pricing, demo. The next section plays automatically right "
+    "after you finish speaking about the current one — you'll simply get prompted to "
+    "continue, with no need for them to say anything. So during a full walkthrough, NEVER "
+    "ask 'should I continue', 'want to see more', or anything needing their answer — nobody "
+    "will reply to that. Just keep narrating straight through, section after section, until "
+    "you reach demo. Only bring up booking, per the normal conversation flow, once you've "
+    "covered all of them. If they interrupt with a real question or comment mid-tour, answer "
+    "it like normal instead of continuing the sequence. "
 
     "VOICE STYLE — everything you write is spoken aloud by TTS: "
     "One to two short sentences per reply; pricing may take three. Sound like a real person — "
@@ -271,6 +305,199 @@ LANGUAGE_CONFIG: dict[str, dict] = {
     },
 }
 
+# Section IDs the frontend can scroll to and point at during a site tour — must match the
+# TOUR_SECTIONS map in frontend/index.html. Order matters: it's also the sequence a full
+# walkthrough advances through.
+_TOUR_ORDER = ["hero", "booking", "voice", "testimonials", "howitworks", "pricing", "demo"]
+_TOUR_SECTION_IDS = frozenset(_TOUR_ORDER)
+
+_SECTION_CUE_RE = re.compile(r"^\s*\[\[show:\s*(\w+)\s*\]\]\s*", re.IGNORECASE)
+_SECTION_CUE_MAX_WAIT = 40  # chars buffered before giving up on seeing a marker
+
+
+# What Arjun should cover at each stop — fed to the LLM verbatim on each auto-advance so
+# it never has to remember the sequence itself (Llama drifts when the order lives only in
+# the system prompt).
+_TOUR_SCRIPT = {
+    "hero": "the top of the page — Amira picks up in one ring, 24/7, in 11 Indian languages",
+    "booking": "the appointment booking card — she checks the live calendar and books right on the call, synced to Google Calendar",
+    "voice": "the voice and brand card — pick the voice and tone, she answers FAQs and warm-transfers tricky calls",
+    "testimonials": "the reviews section — a salon, a clinic, and a restaurant owner who stopped missing calls",
+    "howitworks": "the how-it-works section — three steps, live in under ten minutes, no new phone system",
+    "pricing": "the pricing section — Starter 1999 rupees a month, Growth 3999 rupees, Scale custom, no setup fees",
+    "demo": "the book-a-demo section — a 15-minute live demo call, no credit card needed",
+}
+
+
+class _TourState:
+    """Shared between SectionCueProcessor and TourAdvancer within one call.
+
+    `index` is the last tour stop shown (position in _TOUR_ORDER, -1 = not started).
+    `active` means the full walkthrough is running and TourAdvancer should push the next
+    stop as soon as the bot finishes speaking the current one. `pending_cue` is a section
+    the advancer already scrolled to, so SectionCueProcessor doesn't scroll it twice when
+    the LLM's reply (correctly) opens with the same marker.
+    """
+
+    def __init__(self):
+        self.active = False
+        self.index = -1
+        self.pending_cue: str | None = None
+
+
+class SectionCueProcessor(FrameProcessor):
+    """Turns a leading ``[[show:ID]]`` marker in an LLM reply into a scroll/point cue.
+
+    The marker is stripped before the text reaches TTS (so it's never spoken) and an
+    RTVIServerMessageFrame carrying the section ID is pushed instead — RTVIObserver
+    picks that up from anywhere in the pipeline and forwards it to the browser over
+    the RTVI data channel, where it drives the site-tour scroll + pointer.
+
+    Also updates `tour_state`: a marker for the FIRST stop starts (or restarts) the full
+    walkthrough, and a marker for the stop right after the last one shown resumes it —
+    both arm TourAdvancer's auto-continue. Any other marker is an ad-hoc jump ("what
+    about pricing?"): it scrolls there but leaves the walkthrough position untouched.
+    """
+
+    def __init__(self, valid_sections: frozenset[str], tour_state: "_TourState"):
+        super().__init__()
+        self._valid_sections = valid_sections
+        self._tour_state = tour_state
+        self._buffer = ""
+        self._resolved = False
+
+    async def process_frame(self, frame: Frame, direction: FrameDirection):
+        await super().process_frame(frame, direction)
+
+        if isinstance(frame, LLMFullResponseStartFrame):
+            self._buffer = ""
+            self._resolved = False
+            await self.push_frame(frame, direction)
+            return
+
+        if isinstance(frame, LLMFullResponseEndFrame):
+            if self._buffer:
+                await self.push_frame(LLMTextFrame(text=self._buffer))
+                self._buffer = ""
+            await self.push_frame(frame, direction)
+            return
+
+        if isinstance(frame, LLMTextFrame) and not self._resolved:
+            self._buffer += frame.text
+            match = _SECTION_CUE_RE.match(self._buffer)
+            if match:
+                section = match.group(1).lower()
+                remainder = self._buffer[match.end() :]
+                self._resolved = True
+                self._buffer = ""
+                if section in self._valid_sections:
+                    logger.info(f"Site tour cue: {section}")
+                    if self._tour_state.pending_cue == section:
+                        # TourAdvancer already scrolled here when it queued this reply.
+                        self._tour_state.pending_cue = None
+                    else:
+                        await self.push_frame(RTVIServerMessageFrame(data={"section": section}))
+                    self._update_tour_state(section)
+                else:
+                    logger.warning(f"Site tour cue with unknown section id: {section!r}")
+                if remainder:
+                    await self.push_frame(LLMTextFrame(text=remainder))
+                return
+            if not self._could_be_marker_prefix(self._buffer) or len(self._buffer) > _SECTION_CUE_MAX_WAIT:
+                # No marker in this reply — that's fine: during a full walkthrough the
+                # advancer already scrolled and advanced deterministically, so a missing
+                # marker no longer stalls the tour.
+                self._resolved = True
+                flushed, self._buffer = self._buffer, ""
+                await self.push_frame(LLMTextFrame(text=flushed))
+            return
+
+        await self.push_frame(frame, direction)
+
+    def _update_tour_state(self, section: str) -> None:
+        state = self._tour_state
+        index = _TOUR_ORDER.index(section)
+        if index == 0:
+            # Walkthrough started (or restarted) from the top.
+            state.index = 0
+            state.active = len(_TOUR_ORDER) > 1
+        elif index == state.index + 1:
+            # LLM advanced the tour itself (e.g. visitor said "continue") — resume.
+            state.index = index
+            state.active = index < len(_TOUR_ORDER) - 1
+        # Anything else is an ad-hoc jump: scroll only, walkthrough position untouched.
+
+    @staticmethod
+    def _could_be_marker_prefix(buffered: str) -> bool:
+        prefix = "[[show:"
+        b = buffered.lower()
+        if len(b) >= len(prefix):
+            return b.startswith(prefix)
+        return prefix.startswith(b)
+
+
+class TourAdvancer(FrameProcessor):
+    """Keeps a full site tour moving without waiting for the visitor to speak.
+
+    Sits right after transport.output(), where BotStoppedSpeakingFrame arrives once the
+    bot's audio for a turn has actually finished playing. While `tour_state.active`, it
+    OWNS the progression: it scrolls the browser to the next stop itself (deterministic —
+    doesn't depend on the LLM remembering to emit a marker) and injects a synthetic user
+    turn telling the LLM exactly which section to narrate next, marker included. The
+    upstream LLMMessagesAppendFrame is picked up by LLMUserAggregator and re-triggers
+    the LLM — the same mechanism Pipecat uses to resume after a deferred function-call
+    result.
+
+    If the visitor starts speaking (UserStartedSpeakingFrame — barge-in or between
+    stops), the walkthrough pauses so their question gets answered normally; it resumes
+    when the LLM next emits the in-sequence marker (visitor says "continue") or restarts
+    from the top on a fresh "show me around".
+    """
+
+    def __init__(self, tour_state: "_TourState"):
+        super().__init__()
+        self._tour_state = tour_state
+
+    async def process_frame(self, frame: Frame, direction: FrameDirection):
+        await super().process_frame(frame, direction)
+
+        if isinstance(frame, UserStartedSpeakingFrame):
+            if self._tour_state.active:
+                logger.info("Visitor spoke — pausing site tour auto-advance")
+            self._tour_state.active = False
+            self._tour_state.pending_cue = None
+        elif isinstance(frame, BotStoppedSpeakingFrame) and self._tour_state.active:
+            next_index = self._tour_state.index + 1
+            if next_index >= len(_TOUR_ORDER):
+                self._tour_state.active = False
+            else:
+                section = _TOUR_ORDER[next_index]
+                self._tour_state.index = next_index
+                self._tour_state.active = next_index < len(_TOUR_ORDER) - 1
+                self._tour_state.pending_cue = section
+                logger.info(f"Auto-advancing site tour to: {section}")
+                # Scroll the browser now, slightly ahead of the narration starting.
+                await self.push_frame(RTVIServerMessageFrame(data={"section": section}))
+                await self.push_frame(
+                    LLMMessagesAppendFrame(
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": (
+                                    f"(The tour continues automatically. Describe {_TOUR_SCRIPT[section]} "
+                                    f"in one or two short spoken sentences. Statements only, no questions. "
+                                    f"Start your reply with [[show:{section}]].)"
+                                ),
+                            }
+                        ],
+                        run_llm=True,
+                    ),
+                    FrameDirection.UPSTREAM,
+                )
+
+        await self.push_frame(frame, direction)
+
+
 # Bulbul v3 speaker names accepted by Sarvam. Keep this server-side allowlist so an
 # old browser draft containing a v2-only speaker cannot break TTS for an entire call.
 BULBUL_V3_VOICES = {
@@ -380,6 +607,10 @@ async def run_bot(
         ),
     )
 
+    tour_state = _TourState()
+    section_cue = SectionCueProcessor(_TOUR_SECTION_IDS, tour_state)
+    tour_advancer = TourAdvancer(tour_state)
+
     # LLMContext is Pipecat's current provider-agnostic context object (the successor to
     # the old OpenAI-specific OpenAILLMContext/LLMMessagesContext pattern requested in the
     # original spec). The system prompt lives on the LLM service's `system_instruction`
@@ -424,8 +655,10 @@ async def run_bot(
             stt,
             user_aggregator,
             llm,
+            section_cue,
             tts,
             transport.output(),
+            tour_advancer,
             assistant_aggregator,
         ]
     )
