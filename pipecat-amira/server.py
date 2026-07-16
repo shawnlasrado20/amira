@@ -302,10 +302,29 @@ async def start_session(request: Request):
     return result
 
 
+@app.get("/sessions/{session_id}/context-status", include_in_schema=False)
+async def session_context_status(session_id: str):
+    """Local prototype diagnostic: confirms routing without returning tenant content."""
+    data = active_sessions.get(session_id)
+    if data is None:
+        return Response(content="Invalid or expired session_id", status_code=404)
+    config = data.get("assistantConfig") if isinstance(data, dict) else None
+    return {
+        "configured": isinstance(config, dict),
+        "has_company": bool((config or {}).get("company")),
+        "has_assistant": bool((config or {}).get("assistant")),
+        "language": data.get("language") if isinstance(data, dict) else None,
+    }
+
+
 # ---------------------------------------------------------------------------
 # WebRTC offer handling
 # ---------------------------------------------------------------------------
-async def _handle_offer(request_data: dict, background_tasks: BackgroundTasks):
+async def _handle_offer(
+    request_data: dict,
+    background_tasks: BackgroundTasks,
+    session_data: dict | None = None,
+):
     pc_id = request_data.get("pc_id")
 
     if pc_id and pc_id in pcs_map:
@@ -320,7 +339,14 @@ async def _handle_offer(request_data: dict, background_tasks: BackgroundTasks):
         connection = SmallWebRTCConnection(ice_servers)
         await connection.initialize(sdp=request_data["sdp"], type=request_data["type"])
 
-        language = request_data.get("language", "hi")
+        # session_data comes from active_sessions[session_id] (set at /start, e.g. by
+        # Studio's "Test in browser" via n8n). request_data (this offer's own body) wins
+        # when both are present, so the existing index.html/dashboard.html flow -- which
+        # sends language directly on the offer, without ever registering it at /start --
+        # is unaffected.
+        session_data = session_data or {}
+        language = request_data.get("language") or session_data.get("language", "hi")
+        assistant_config = session_data.get("assistantConfig") or request_data.get("assistantConfig")
 
         session_entry: dict[str, float | None] = {
             "start_time": time.time(),
@@ -346,7 +372,7 @@ async def _handle_offer(request_data: dict, background_tasks: BackgroundTasks):
                 audio_out_enabled=True,
             ),
         )
-        background_tasks.add_task(bot.run_bot, transport, language)
+        background_tasks.add_task(bot.run_bot, transport, language, assistant_config)
 
     answer = connection.get_answer()
     pcs_map[answer["pc_id"]] = connection
@@ -375,7 +401,11 @@ async def sessions_proxy(
             return Response(content="Invalid JSON body", status_code=400)
 
         if request.method == HTTPMethod.POST.value:
-            return await _handle_offer(request_data, background_tasks)
+            return await _handle_offer(
+                request_data,
+                background_tasks,
+                active_sessions.get(session_id),
+            )
 
     return Response(status_code=200)
 

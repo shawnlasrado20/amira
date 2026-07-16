@@ -68,6 +68,49 @@
   .btn-ghost { background: transparent; border: 1.5px solid var(--border); color: var(--ink); border-radius: 100px; padding: 11px 22px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
   .btn-ink { background: var(--ink); border: none; color: #f6f1e9; border-radius: 100px; padding: 11px 22px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 
+  /* ── voice picker ── */
+  .v-scope { border: none; background: transparent; color: #574f45; border-radius: 100px; padding: 7px 16px; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .v-scope.on { background: #fff; color: var(--ink); box-shadow: 0 2px 6px rgba(20,16,14,.1); }
+  .v-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; cursor: pointer; }
+  .v-row:hover { background: #f1ebe0; }
+  .v-row.sel { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  .v-row .av { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg,#efe7d8,#ddd3c3); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #574f45; flex-shrink: 0; }
+  .v-row .vn { font-size: 14px; font-weight: 600; }
+  .v-row .vd { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .v-row .vr { margin-left: auto; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #cfc5b6; flex-shrink: 0; }
+  .v-row.sel .vr { border-color: var(--ink); background: var(--ink); box-shadow: inset 0 0 0 3px #fff; }
+
+  /* ── side drawer ── */
+  .drawer-bg { display: none; position: fixed; inset: 0; background: rgba(20,16,14,.35); z-index: 95; }
+  .drawer-bg.open { display: block; }
+  .drawer { position: fixed; top: 0; right: -420px; width: min(420px, 92vw); height: 100vh; background: var(--paper); border-left: 1px solid var(--border); box-shadow: -20px 0 50px rgba(20,16,14,.2); transition: right .25s ease; overflow-y: auto; padding: 24px 24px 100px; z-index: 96; }
+  .drawer-bg.open .drawer { right: 0; }
+  .drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .drawer-head h3 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 22px; margin: 0; }
+  .drawer-x { cursor: pointer; color: var(--muted); font-size: 20px; background: none; border: none; }
+  .d-field { margin-bottom: 18px; }
+  .d-field label { display: block; font-size: 12.5px; font-weight: 600; color: #574f45; margin-bottom: 7px; }
+  .d-field input[type=text], .d-field textarea, .d-field select { width: 100%; font-family: inherit; font-size: 14px; padding: 11px 13px; border: 1.5px solid #ddd3c3; border-radius: 11px; background: #fff; color: var(--ink); }
+  .d-field input:focus, .d-field textarea:focus, .d-field select:focus { outline: none; border-color: var(--accent); }
+  .d-field textarea { resize: vertical; min-height: 70px; }
+  .d-seg { display: flex; gap: 4px; background: #efe7d8; border-radius: 100px; padding: 3px; margin-bottom: 18px; }
+  .d-seg button { flex: 1; border: none; background: transparent; color: #574f45; border-radius: 100px; padding: 8px 10px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .d-seg button.on { background: #fff; color: var(--ink); box-shadow: 0 2px 6px rgba(20,16,14,.1); }
+  .d-toggle-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border); }
+  .d-toggle-row:first-of-type { border-top: none; }
+  .d-toggle-row .tt { font-size: 13.5px; font-weight: 600; }
+  .d-toggle-row .td { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+  .d-toggle { width: 36px; height: 20px; border-radius: 999px; background: var(--border); position: relative; flex-shrink: 0; cursor: pointer; transition: background .15s; margin-top: 2px; }
+  .d-toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .15s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+  .d-toggle.on { background: var(--accent); }
+  .d-toggle.on::after { left: 18px; }
+  .drawer-save { display: block; background: var(--ink); border: none; color: #f6f1e9; border-radius: 100px; padding: 13px 24px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px; }
+  .target-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid var(--border); background: #fff; border-radius: 13px; padding: 13px 16px; margin-bottom: 8px; }
+  .target-row .tn { font-size: 14px; font-weight: 600; }
+  .target-row .tp { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .target-row .rm { color: var(--muted); background: none; border: none; cursor: pointer; font-size: 16px; }
+  .target-row .rm:hover { color: #b4232a; }
+
   /* ── floating test bar ── */
   .callbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 80; display: flex; align-items: center; gap: 10px; background: var(--ink); border-radius: 100px; padding: 8px 10px; box-shadow: 0 20px 50px rgba(20,16,14,.35); }
   .callbar select { background: #211b16; color: #ede6dc; border: 1px solid #322920; border-radius: 100px; padding: 9px 12px; font-family: inherit; font-size: 13px; font-weight: 600; }
@@ -195,6 +238,82 @@
   </div>
 </div>
 
+<!-- Voice picker modal -->
+<div class="overlay" id="voice-overlay">
+  <div class="modal" style="max-width:560px;">
+    <h3>Select voice</h3>
+    <div style="display:flex; gap:16px; align-items:center; margin-bottom:16px;">
+      <div style="display:flex; gap:4px; background:#efe7d8; border-radius:100px; padding:3px;">
+        <button class="v-scope on" data-scope="all">All</button>
+        <button class="v-scope" data-scope="popular">Popular</button>
+      </div>
+      <select id="v-lang-filter" style="margin-left:auto; border:1.5px solid #ddd3c3; border-radius:100px; padding:8px 14px; font-family:inherit; font-size:13px; font-weight:600; background:#fff; color:var(--ink);">
+        <option value="multi">Multi (Hindi, English, Tamil…)</option>
+        <option value="en">English</option>
+        <option value="hi">Hindi</option>
+        <option value="ta">Tamil</option>
+      </select>
+    </div>
+    <div id="voice-list" style="max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:4px;"></div>
+    <div class="row">
+      <button class="btn-ghost" id="voice-cancel">Cancel</button>
+      <button class="btn-ink" id="voice-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Transfer calls drawer -->
+<div class="drawer-bg" id="transfer-drawer-bg">
+  <div class="drawer">
+    <div class="drawer-head"><h3>Call transfer</h3><button class="drawer-x" id="transfer-drawer-x">✕</button></div>
+    <div class="d-field"><label>Activity</label><select id="tr-activity"><option>Always</option><option>Business hours only</option></select></div>
+    <div class="d-field"><label>Who does this number belong to?</label><input type="text" id="tr-owner" placeholder="e.g. Finance, Front desk…"></div>
+    <div class="d-seg" id="tr-seg">
+      <button class="on" data-t="user">User</button>
+      <button data-t="phone">Phone Number</button>
+      <button data-t="sip">SIP</button>
+    </div>
+    <div class="d-field" id="tr-target-field"><label>Phone number</label><input type="text" id="tr-number" placeholder="+91 98765 43210"></div>
+    <div class="d-toggle-row"><div><div class="tt">Check calendar before transfer</div><div class="td">Agent checks this person's availability before transferring.</div></div><span class="d-toggle" id="tr-t-calendar"></span></div>
+    <div class="d-toggle-row"><div><div class="tt">Notification email</div><div class="td">Sends a summary if the transfer fails or isn't picked up.</div></div><span class="d-toggle" id="tr-t-notify"></span></div>
+    <div class="d-field"><label>In which cases should this transfer be performed?</label><textarea id="tr-condition" placeholder="e.g. If a customer has questions about pricing"></textarea></div>
+    <button class="drawer-save" id="tr-save">Save</button>
+  </div>
+</div>
+
+<!-- Send email drawer -->
+<div class="drawer-bg" id="email-drawer-bg">
+  <div class="drawer">
+    <div class="drawer-head"><h3>Send email</h3><button class="drawer-x" id="email-drawer-x">✕</button></div>
+    <div class="d-field"><label>Name</label><input type="text" id="em-name" placeholder="Email to Support Team"></div>
+    <div class="d-field"><label>Subject</label><input type="text" id="em-subject" placeholder="Amira — Call Received"></div>
+    <div class="d-field"><label>Recipient(s)</label><input type="text" id="em-recipients" placeholder="recipient@company.com"></div>
+    <div class="d-field"><label>Under what condition should an email be sent after the call?</label><textarea id="em-condition" placeholder="e.g. The caller asked for a callback"></textarea></div>
+    <div class="d-field"><label>Content</label><textarea id="em-content" style="min-height:100px;">Hello,
+
+You received a call from {{fromNumber}}.</textarea></div>
+    <button class="drawer-save" id="em-save">Save</button>
+  </div>
+</div>
+
+<!-- Assign number modal -->
+<div class="overlay" id="assign-overlay">
+  <div class="modal" style="max-width:480px;">
+    <h3>Assign number</h3>
+    <p style="font-size:13.5px;color:var(--muted);margin:-4px 0 16px;">All your numbers are assigned to other assistants.</p>
+    <div style="background:#efe7d8;border-radius:13px;padding:13px 15px;font-size:12.5px;color:#574f45;line-height:1.5;margin-bottom:14px;">
+      Numbers provided by us can be purchased directly on the platform — no further action required.
+    </div>
+    <div id="assign-quota-warning" style="display:none;background:#fbeaea;border:1px solid #f0c9c9;border-radius:13px;padding:13px 15px;font-size:12.5px;color:#a23b3b;line-height:1.5;margin-bottom:18px;">
+      You have exceeded your included quota. Additional numbers are charged at $5/month.
+    </div>
+    <div class="row" style="justify-content:space-between;">
+      <button class="btn-ghost" id="assign-cancel">Cancel</button>
+      <button class="btn-ink" id="assign-buy">Buy new number</button>
+    </div>
+  </div>
+</div>
+
 <!-- Live transcript + call bar -->
 <div class="livecard" id="livecard">
   <div class="cap">LIVE TRANSCRIPT</div>
@@ -254,7 +373,7 @@
     essentials: { t: "Essentials", d: "The basics of how Amira presents herself on every call.",
       b: '<div class="prow"><div><div class="t">Assistant name</div><div class="d">Amira</div></div><span>›</span></div>' +
          '<div class="prow"><div><div class="t">Business</div><div class="d">' + bizName + '</div></div><span>›</span></div>' +
-         '<div class="prow"><div><div class="t">Voice</div><div class="d">Warm female · natural Indian accent</div></div><span>›</span></div>' +
+         '<div class="prow" id="voice-row"><div><div class="t">Voice</div><div class="d" id="voice-row-desc">Warm female · natural Indian accent</div></div><span>›</span></div>' +
          '<div class="prow"><div><div class="t">Languages</div><div class="d">All 11 — auto-detected per caller</div></div><span>›</span></div>' },
     answers: { t: "Answer questions", d: "Amira answers FAQs from the business info you give her.",
       b: '<div class="prow"><div><div class="t">Company information</div><div class="d">Hours, location, services, prices</div></div><span>›</span></div>' +
@@ -264,10 +383,9 @@
          '<textarea id="company-info" placeholder="Opening hours, address, popular services…"></textarea>' +
          '<button class="save-mini" id="save-info">Save</button>' },
     transfer: { t: "Transfer calls", d: "Warm-transfer to the right person when a human is needed.",
-      b: '<div class="prow"><div><div class="t">Add transfer target</div><div class="d">Name + phone number, e.g. “Owner — +91 98…”</div></div><span>＋</span></div>' },
+      b: '<div id="transfer-list"></div><div class="prow" id="add-transfer-row"><div><div class="t">Add transfer</div><div class="d">Send calls to a person, number, or SIP endpoint</div></div><span>＋</span></div>' },
     email: { t: "Send email", d: "A clean summary in your inbox the moment each call ends.",
-      b: '<div class="prow"><div><div class="t">Summary recipient</div><div class="d">' + esc(user.email || "you@business.com") + '</div></div><span>›</span></div>' +
-         '<div class="prow"><div><div class="t">Template</div><div class="d">New booking · caller details · next steps</div></div><span>›</span></div>' },
+      b: '<div id="email-list"></div><div class="prow" id="add-email-row"><div><div class="t">Add another action</div><div class="d">Send automated emails with call data and templates</div></div><span>＋</span></div>' },
     sms: { t: "Send SMS", d: "Text confirmations and follow-ups to callers automatically.",
       b: '<div class="prow"><div><div class="t">Booking confirmation SMS</div><div class="d">Available on Growth and Scale</div></div><span>＋</span></div>' },
     book: { t: "Book appointments", d: "Amira offers real slots and confirms on the call.",
@@ -297,8 +415,189 @@
         toast("Company info saved");
       });
     }
+    var voiceRow = document.getElementById("voice-row");
+    if (voiceRow) {
+      voiceRow.addEventListener("click", openVoiceModal);
+      var savedVoiceId = localStorage.getItem("amira_voice");
+      var savedVoice = VOICES.find(function (x) { return x.id === savedVoiceId; });
+      if (savedVoice) document.getElementById("voice-row-desc").textContent = savedVoice.name + " · " + savedVoice.desc;
+    }
+    if (key === "transfer") {
+      renderTransferList();
+      document.getElementById("add-transfer-row").addEventListener("click", openTransferDrawer);
+    }
+    if (key === "email") {
+      renderEmailList();
+      document.getElementById("add-email-row").addEventListener("click", openEmailDrawer);
+    }
   }
   abilities.forEach(function (a) { a.addEventListener("click", function () { openPanel(a.dataset.key); }); });
+
+  // ── voice picker modal ────────────────────────────────────
+  var VOICES = [
+    { id: "ratan", name: "Ratan", desc: "Warm male · Hindi & South Indian", lang: "multi" },
+    { id: "shubh", name: "Shubh", desc: "Confident male · Hindi & Telugu", lang: "multi" },
+    { id: "anushka", name: "Anushka", desc: "Warm female · natural Indian accent", lang: "multi" },
+    { id: "priya", name: "Priya", desc: "Bright female · English & Hindi", lang: "en" },
+    { id: "kavya", name: "Kavya", desc: "Calm female · Tamil & English", lang: "ta" },
+    { id: "rahul", name: "Rahul", desc: "Friendly male · English", lang: "en" },
+    { id: "arya", name: "Arya", desc: "Crisp female · Hindi", lang: "hi" },
+    { id: "vijay", name: "Vijay", desc: "Deep male · Tamil", lang: "ta" }
+  ];
+  var voiceOverlay = document.getElementById("voice-overlay");
+  var voiceList = document.getElementById("voice-list");
+  var voiceLangFilter = document.getElementById("v-lang-filter");
+  var voiceScope = "all";
+  var selectedVoice = localStorage.getItem("amira_voice") || "anushka";
+
+  function renderVoiceList() {
+    var lang = voiceLangFilter.value;
+    var pool = VOICES.filter(function (v) { return lang === "multi" ? true : v.lang === lang || v.lang === "multi"; });
+    if (voiceScope === "popular") pool = pool.slice(0, 4);
+    voiceList.innerHTML = pool.map(function (v) {
+      return '<div class="v-row' + (v.id === selectedVoice ? ' sel' : '') + '" data-voice="' + v.id + '">' +
+        '<span class="av">' + v.name.slice(0, 1) + '</span>' +
+        '<div><div class="vn">' + v.name + '</div><div class="vd">' + v.desc + '</div></div>' +
+        '<span class="vr"></span></div>';
+    }).join("");
+    voiceList.querySelectorAll(".v-row").forEach(function (row) {
+      row.addEventListener("click", function () {
+        selectedVoice = row.dataset.voice;
+        renderVoiceList();
+      });
+    });
+  }
+  function openVoiceModal() {
+    renderVoiceList();
+    voiceOverlay.classList.add("open");
+  }
+  document.querySelectorAll(".v-scope").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".v-scope").forEach(function (b) { b.classList.toggle("on", b === btn); });
+      voiceScope = btn.dataset.scope;
+      renderVoiceList();
+    });
+  });
+  voiceLangFilter.addEventListener("change", renderVoiceList);
+  document.getElementById("voice-cancel").addEventListener("click", function () { voiceOverlay.classList.remove("open"); });
+  voiceOverlay.addEventListener("click", function (e) { if (e.target === voiceOverlay) voiceOverlay.classList.remove("open"); });
+  document.getElementById("voice-save").addEventListener("click", function () {
+    localStorage.setItem("amira_voice", selectedVoice);
+    var v = VOICES.find(function (x) { return x.id === selectedVoice; });
+    var desc = document.getElementById("voice-row-desc");
+    if (v && desc) desc.textContent = v.name + " · " + v.desc;
+    voiceOverlay.classList.remove("open");
+    toast("Voice updated");
+  });
+
+  // ── transfer calls drawer ─────────────────────────────────
+  var transferTargets = JSON.parse(localStorage.getItem("amira_transfers") || "[]");
+  var trDrawerBg = document.getElementById("transfer-drawer-bg");
+  var trTargetType = "user";
+  document.querySelectorAll("#tr-seg button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#tr-seg button").forEach(function (b) { b.classList.toggle("on", b === btn); });
+      trTargetType = btn.dataset.t;
+      var f = document.getElementById("tr-target-field");
+      var labels = { user: "Team member", phone: "Phone number", sip: "SIP address" };
+      var placeholders = { user: "Select a team member…", phone: "+91 98765 43210", sip: "sip:name@domain.com" };
+      f.querySelector("label").textContent = labels[trTargetType];
+      f.querySelector("input").placeholder = placeholders[trTargetType];
+    });
+  });
+  ["tr-t-calendar", "tr-t-notify"].forEach(function (id) {
+    document.getElementById(id).addEventListener("click", function () { this.classList.toggle("on"); });
+  });
+  function renderTransferList() {
+    var list = document.getElementById("transfer-list");
+    if (!list) return;
+    list.innerHTML = transferTargets.map(function (t, i) {
+      return '<div class="target-row"><div><div class="tn">' + esc(t.owner || "Untitled") + '</div><div class="tp">' + esc(t.number) + '</div></div><button class="rm" data-i="' + i + '">✕</button></div>';
+    }).join("");
+    list.querySelectorAll(".rm").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        transferTargets.splice(+btn.dataset.i, 1);
+        localStorage.setItem("amira_transfers", JSON.stringify(transferTargets));
+        renderTransferList();
+      });
+    });
+  }
+  function openTransferDrawer() {
+    document.getElementById("tr-owner").value = "";
+    document.getElementById("tr-number").value = "";
+    document.getElementById("tr-condition").value = "";
+    trDrawerBg.classList.add("open");
+  }
+  document.getElementById("transfer-drawer-x").addEventListener("click", function () { trDrawerBg.classList.remove("open"); });
+  trDrawerBg.addEventListener("click", function (e) { if (e.target === trDrawerBg) trDrawerBg.classList.remove("open"); });
+  document.getElementById("tr-save").addEventListener("click", function () {
+    var owner = document.getElementById("tr-owner").value.trim();
+    var number = document.getElementById("tr-number").value.trim();
+    if (!number) { document.getElementById("tr-number").focus(); return; }
+    transferTargets.push({ owner: owner, number: number, type: trTargetType, condition: document.getElementById("tr-condition").value.trim() });
+    localStorage.setItem("amira_transfers", JSON.stringify(transferTargets));
+    renderTransferList();
+    trDrawerBg.classList.remove("open");
+    toast("Transfer target created");
+  });
+
+  // ── send email drawer ─────────────────────────────────────
+  var emailActions = JSON.parse(localStorage.getItem("amira_emails") || "[]");
+  var emDrawerBg = document.getElementById("email-drawer-bg");
+  function renderEmailList() {
+    var list = document.getElementById("email-list");
+    if (!list) return;
+    list.innerHTML = emailActions.map(function (a, i) {
+      return '<div class="target-row"><div><div class="tn">' + esc(a.name || "Untitled action") + '</div><div class="tp">' + esc(a.recipients) + '</div></div><button class="rm" data-i="' + i + '">✕</button></div>';
+    }).join("");
+    list.querySelectorAll(".rm").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        emailActions.splice(+btn.dataset.i, 1);
+        localStorage.setItem("amira_emails", JSON.stringify(emailActions));
+        renderEmailList();
+      });
+    });
+  }
+  function openEmailDrawer() {
+    document.getElementById("em-name").value = "";
+    document.getElementById("em-subject").value = "Amira — Call Received";
+    document.getElementById("em-recipients").value = "";
+    document.getElementById("em-condition").value = "";
+    emDrawerBg.classList.add("open");
+  }
+  document.getElementById("email-drawer-x").addEventListener("click", function () { emDrawerBg.classList.remove("open"); });
+  emDrawerBg.addEventListener("click", function (e) { if (e.target === emDrawerBg) emDrawerBg.classList.remove("open"); });
+  document.getElementById("em-save").addEventListener("click", function () {
+    var recipients = document.getElementById("em-recipients").value.trim();
+    if (!recipients) { document.getElementById("em-recipients").focus(); return; }
+    emailActions.push({
+      name: document.getElementById("em-name").value.trim(),
+      subject: document.getElementById("em-subject").value.trim(),
+      recipients: recipients,
+      condition: document.getElementById("em-condition").value.trim(),
+      content: document.getElementById("em-content").value.trim()
+    });
+    localStorage.setItem("amira_emails", JSON.stringify(emailActions));
+    renderEmailList();
+    emDrawerBg.classList.remove("open");
+    toast("Email action saved");
+  });
+
+  // ── assign number modal ───────────────────────────────────
+  var assignOverlay = document.getElementById("assign-overlay");
+  document.getElementById("assign-btn").addEventListener("click", function () {
+    var owned = localStorage.getItem("amira_number_purchased") === "1";
+    document.getElementById("assign-quota-warning").style.display = owned ? "block" : "none";
+    assignOverlay.classList.add("open");
+  });
+  document.getElementById("assign-cancel").addEventListener("click", function () { assignOverlay.classList.remove("open"); });
+  assignOverlay.addEventListener("click", function (e) { if (e.target === assignOverlay) assignOverlay.classList.remove("open"); });
+  document.getElementById("assign-buy").addEventListener("click", function () {
+    localStorage.setItem("amira_number_purchased", "1");
+    assignOverlay.classList.remove("open");
+    toast("Number purchased!");
+  });
+
   openPanel("essentials");
 
   // ── custom prompt modal ──────────────────────────────────
@@ -311,10 +610,6 @@
     localStorage.setItem("amira_custom_prompt", promptBox.value);
     overlay.classList.remove("open");
     toast("Custom instructions saved");
-  });
-
-  document.getElementById("assign-btn").addEventListener("click", function () {
-    toast("Phone numbers arrive with the telephony rollout — coming soon");
   });
 
   // ── real test call (n8n → pipecat, same flow as the landing demo) ──
@@ -380,14 +675,44 @@
     });
   }
 
+  // Assemble the tenant config the bot expects (bot.py _build_system_prompt schema),
+  // sourced from everything the dashboard has saved. Passing this makes the test call
+  // use the RECEPTIONIST persona with the business's own info — not the demo persona.
+  function ls(key) { return localStorage.getItem(key) || ""; }
+  function buildAssistantConfig() {
+    var lang = document.getElementById("test-lang").value;
+    return {
+      assistant: {
+        name: "Amira",
+        firstMessage: "",                       // fall back to the per-language greeting
+        systemPrompt: ls("amira_custom_prompt"),
+        voice: ls("amira_voice"),
+        language: lang
+      },
+      company: {
+        name: user.business || "",
+        industry: "",
+        website: "",
+        locationHours: "",
+        servicesPolicies: ls("amira_company_info")
+      },
+      abilities: {
+        answerQuestions: { enabled: true, qa: ls("amira_company_info") }
+      },
+      knowledgeBase: [],
+      meta: { source: "Amira Dashboard" }
+    };
+  }
+
   async function startTest() {
     connecting = true;
     testBtn.disabled = true;
     status.textContent = "connecting…";
     try {
+      var cfg = buildAssistantConfig();
       var startRes = await fetch(START_WEBHOOK_URL, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: user.business || "Dashboard test" })
+        body: JSON.stringify({ name: user.business || "Dashboard test", language: document.getElementById("test-lang").value, assistantConfig: cfg })
       });
       var session = await startRes.json();
       if (!startRes.ok || !session.success) throw new Error("session failed");
