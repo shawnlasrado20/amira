@@ -516,7 +516,7 @@ You received a call from {{fromNumber}}.</textarea></div>
     tail.textContent = state === "done" ? "✓" : "＋";
   }
   function updateAbilityStatuses() {
-    var biz = hasStoredText("amira_biz") || !!(user.business || "").trim();
+    var biz = hasStoredText("amira_biz") || (editorMode !== "new" && !!(user.business || "").trim());
     var hasKnowledge = hasStoredText("amira_answer_faqs") || hasStoredText("amira_company_info") || hasStoredText("amira_services") || readStoredList("amira_kb").length > 0;
     var bookingOn = localStorage.getItem("amira_booking_on") !== "off";
     var smsOn = localStorage.getItem("amira_sms_on") === "on";
