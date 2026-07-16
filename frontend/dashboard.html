@@ -143,6 +143,30 @@
 
   .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #2fae6b; color: #04210f; font-weight: 600; font-size: 14px; border-radius: 100px; padding: 12px 24px; z-index: 100; box-shadow: 0 14px 34px rgba(0,0,0,.18); opacity: 0; transition: opacity .4s; pointer-events: none; }
   .toast.show { opacity: 1; }
+  .assistant-tools { display:flex; gap:9px; align-items:center; flex-wrap:wrap; margin:14px 0 4px; }
+  .assistant-tools select { min-width:210px; }
+  .view-hidden { display:none !important; }
+  .history-head { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:22px; }
+  .history-list { display:grid; gap:12px; }
+  .history-card { background:#fff; border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+  .history-row { display:grid; grid-template-columns:1.5fr 1.2fr .55fr .55fr .65fr; gap:14px; padding:17px 18px; align-items:center; cursor:pointer; font-size:13px; }
+  .history-row:hover { background:#fbf7ef; }
+  .history-meta { color:var(--muted); font-size:12px; margin-top:3px; }
+  .history-detail { display:none; border-top:1px solid var(--line); padding:18px; background:#fffdfa; }
+  .history-card.open .history-detail { display:block; }
+  .history-section { margin-bottom:16px; }
+  .history-section h4 { margin:0 0 7px; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .transcript-line { margin:0 0 7px; line-height:1.5; }
+  .empty-history { padding:42px; text-align:center; border:1px dashed var(--line); border-radius:16px; color:var(--muted); }
+  .kb-grid { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr); gap:20px; }
+  .kb-card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px; }
+  .kb-card h3 { margin:0 0 6px; font-size:18px; }
+  .kb-card .pd { margin-bottom:16px; }
+  .kb-source { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 0; border-bottom:1px solid var(--line); }
+  .kb-source:last-child { border-bottom:0; }
+  .kb-source-name { font-weight:600; font-size:13px; }
+  .kb-source-meta { color:var(--muted); font-size:11px; margin-top:3px; }
+  .kb-remove { border:0; background:transparent; color:#a34a3e; cursor:pointer; font:inherit; font-size:12px; }
   @media (max-width: 900px) { .shell { grid-template-columns: 1fr; } .side { display: none; } .cols { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -155,10 +179,10 @@
     </a>
     <div class="nav-item">Home</div>
     <div class="sec">Contents</div>
-    <div class="nav-item on">Assistants</div>
-    <div class="nav-item">Knowledge Base</div>
+    <div class="nav-item on" id="nav-assistants">Assistants</div>
+    <div class="nav-item" id="nav-knowledge">Knowledge Base</div>
     <div class="nav-item">Phone Numbers</div>
-    <div class="nav-item">Call History</div>
+    <div class="nav-item" id="nav-history">Call History</div>
     <div class="sec">Admin</div>
     <div class="nav-item">Payments</div>
     <div class="nav-item">API Keys</div>
@@ -168,9 +192,16 @@
   </aside>
 
   <main class="main">
+    <section id="assistant-view">
     <div class="crumb">Home <span>›</span> Assistants <span>›</span> <b>Assistant detail</b></div>
     <h1>Edit ‘Amira’ <span id="plan-chip" style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#efe7d8;color:#574f45;border-radius:100px;padding:5px 12px;"></span></h1>
     <p class="sub" id="assist-sub">Receptionist for your business</p>
+    <div class="assistant-tools">
+      <select class="fi" id="assistant-select" aria-label="Saved assistant"><option value="">Unsaved draft</option></select>
+      <button class="btn-ghost" id="new-assistant">New assistant</button>
+      <button class="btn-ink" id="save-assistant">Save assistant</button>
+      <span class="cb-status" id="save-state">Draft</span>
+    </div>
 
     <div class="tabs">
       <div class="tab on" data-tab="behaviour">Behaviour</div>
@@ -180,44 +211,44 @@
     <div class="cols" id="tab-behaviour">
       <div>
         <div class="ability" data-key="essentials">
-          <span class="ic">✦</span>
+          <span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg></span>
           <div><div class="nm">Essentials</div><div class="ds">Name, voice, language and greeting</div></div>
           <span class="tail">›</span>
         </div>
         <div class="ability" data-key="answers">
-          <span class="ic">💬</span>
+          <span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></span>
           <div><div class="nm">Answer questions</div><div class="ds">FAQs from your business info</div></div>
           <span class="tail tick">✓</span>
         </div>
         <div class="ability" data-key="transfer">
-          <span class="ic">↪</span>
+          <span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg></span>
           <div><div class="nm">Transfer calls</div><div class="ds">Forward to your team or phone numbers</div></div>
           <span class="tail">＋</span>
         </div>
         <div class="ability" data-key="email">
-          <span class="ic">✉️</span>
+          <span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
           <div><div class="nm">Send email</div><div class="ds">Call summaries and custom templates</div></div>
           <span class="tail tick">✓</span>
         </div>
 
         <div class="adv-label">Advanced abilities</div>
         <div class="ability" data-key="prompt">
-          <span class="ic">📝</span>
+          <span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
           <div><div class="nm">Custom prompt / instructions</div><div class="ds">Fine-tune exactly how she speaks</div></div>
           <span class="tail">›</span>
         </div>
         <div class="ability" data-key="sms">
-          <span class="ic">📱</span>
+          <span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg></span>
           <div><div class="nm">Send SMS</div><div class="ds">Dynamic texts to callers or fixed numbers</div></div>
           <span class="tail">＋</span>
         </div>
         <div class="ability" data-key="book">
-          <span class="ic">📅</span>
+          <span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg></span>
           <div><div class="nm">Book appointments</div><div class="ds">Straight into your calendar, on the call</div></div>
           <span class="tail tick">✓</span>
         </div>
         <div class="ability" data-key="webhooks">
-          <span class="ic">⚙︎</span>
+          <span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span>
           <div><div class="nm">Webhooks</div><div class="ds">Inbound and outbound API workflows</div></div>
           <span class="tail">›</span>
         </div>
@@ -232,13 +263,36 @@
 
     <div class="cols" id="tab-technical" style="display:none;">
       <div>
-        <div class="ability"><span class="ic">🔊</span><div><div class="nm">Voice engine</div><div class="ds">Sarvam bulbul:v3 · natural Indian voices</div></div><span class="tail tick">✓</span></div>
-        <div class="ability"><span class="ic">👂</span><div><div class="nm">Speech recognition</div><div class="ds">Sarvam saaras:v3 · 11 languages, code-mix</div></div><span class="tail tick">✓</span></div>
-        <div class="ability"><span class="ic">🧠</span><div><div class="nm">Reasoning model</div><div class="ds">Low-latency LLM tuned for sales calls</div></div><span class="tail tick">✓</span></div>
-        <div class="ability"><span class="ic">🔒</span><div><div class="nm">Data &amp; privacy</div><div class="ds">Recordings and transcripts stay in your account</div></div><span class="tail">›</span></div>
+        <div class="ability"><span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></span><div><div class="nm">Voice engine</div><div class="ds">Sarvam bulbul:v3 · natural Indian voices</div></div><span class="tail tick">✓</span></div>
+        <div class="ability"><span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8.5a6.5 6.5 0 1 1 13 0c0 6-6 6-6 10a3.5 3.5 0 0 1-7 0"/><path d="M15 8.5a2.5 2.5 0 0 0-5 0v1a2 2 0 1 0 4 0"/></svg></span><div><div class="nm">Speech recognition</div><div class="ds">Sarvam saaras:v3 · 11 languages, code-mix</div></div><span class="tail tick">✓</span></div>
+        <div class="ability"><span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/></svg></span><div><div class="nm">Reasoning model</div><div class="ds">Low-latency LLM tuned for sales calls</div></div><span class="tail tick">✓</span></div>
+        <div class="ability"><span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span><div><div class="nm">Data &amp; privacy</div><div class="ds">Recordings and transcripts stay in your account</div></div><span class="tail">›</span></div>
       </div>
       <div class="panel"><h3>Technical</h3><p class="pd">Engine settings are managed for you. Talk to us for custom voice cloning, on-prem hosting, or SIP trunk configuration.</p></div>
     </div>
+    </section>
+    <section id="history-view" class="view-hidden">
+      <div class="crumb">Home <span>›</span> <b>Call History</b></div>
+      <div class="history-head"><div><h1>Call History</h1><p class="sub">Browser test calls, transcripts, summaries and recordings.</p></div><button class="btn-ghost" id="refresh-history">Refresh</button></div>
+      <div class="history-list" id="call-history-list"><div class="empty-history">Loading calls…</div></div>
+    </section>
+    <section id="knowledge-view" class="view-hidden">
+      <div class="crumb">Home <span>›</span> <b>Knowledge Base</b></div>
+      <div class="history-head"><div><h1>Knowledge Base</h1><p class="sub">Business information the assistant can use during every call.</p></div></div>
+      <div class="kb-grid">
+        <div class="kb-card">
+          <h3>Sources</h3><p class="pd">Upload plain-text documents or add reference notes. Saved sources are included in test calls automatically.</p>
+          <div class="kb-drop" id="knowledge-drop">Drop a TXT or Markdown file here, or click to upload<input type="file" id="knowledge-file" multiple accept=".txt,.md,text/plain,text/markdown" style="display:none" /></div>
+          <div id="knowledge-list"></div>
+        </div>
+        <div class="kb-card">
+          <h3>Add reference text</h3><p class="pd">Paste menus, FAQs, policies, product information, or other facts.</p>
+          <label class="fl">Source name</label><input class="fi" id="knowledge-name" placeholder="Delivery policy" />
+          <label class="fl">Content</label><textarea class="fi" id="knowledge-text" style="min-height:190px" placeholder="Orders above AED 150 receive free delivery within Dubai…"></textarea>
+          <button class="btn-ink" id="knowledge-add">Add to knowledge base</button>
+        </div>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -343,6 +397,7 @@ You received a call from {{fromNumber}}.</textarea></div>
     <option value="pa">ਪੰਜਾਬੀ</option><option value="od">ଓଡ଼ିଆ</option>
   </select>
   <button class="cb-ghost" id="assign-btn">Assign number</button>
+  <button class="cb-ghost" id="mute-btn" disabled>Mute</button>
   <button class="cb-main" id="test-btn">Test call</button>
   <span class="cb-status" id="cb-status"></span>
 </div>
@@ -538,7 +593,7 @@ You received a call from {{fromNumber}}.</textarea></div>
     if (!list) return;
     var docs = loadKB();
     list.innerHTML = docs.map(function (d, i) {
-      return '<div class="kb-doc"><span>📄</span><span>' + (d.name || "document") + '</span>' +
+      return '<div class="kb-doc"><span><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span><span>' + (d.name || "document") + '</span>' +
              '<span class="rm" data-i="' + i + '">✕</span></div>';
     }).join("");
     list.querySelectorAll(".rm").forEach(function (x) {
@@ -573,18 +628,22 @@ You received a call from {{fromNumber}}.</textarea></div>
   var VOICES = [
     { id: "ratan", name: "Ratan", desc: "Warm male · Hindi & South Indian", lang: "multi" },
     { id: "shubh", name: "Shubh", desc: "Confident male · Hindi & Telugu", lang: "multi" },
-    { id: "anushka", name: "Anushka", desc: "Warm female · natural Indian accent", lang: "multi" },
+    { id: "simran", name: "Simran", desc: "Warm female · natural Indian accent", lang: "multi" },
     { id: "priya", name: "Priya", desc: "Bright female · English & Hindi", lang: "en" },
     { id: "kavya", name: "Kavya", desc: "Calm female · Tamil & English", lang: "ta" },
     { id: "rahul", name: "Rahul", desc: "Friendly male · English", lang: "en" },
-    { id: "arya", name: "Arya", desc: "Crisp female · Hindi", lang: "hi" },
+    { id: "ishita", name: "Ishita", desc: "Crisp female · Hindi", lang: "hi" },
     { id: "vijay", name: "Vijay", desc: "Deep male · Tamil", lang: "ta" }
   ];
   var voiceOverlay = document.getElementById("voice-overlay");
   var voiceList = document.getElementById("voice-list");
   var voiceLangFilter = document.getElementById("v-lang-filter");
   var voiceScope = "all";
-  var selectedVoice = localStorage.getItem("amira_voice") || "anushka";
+  var selectedVoice = localStorage.getItem("amira_voice") || "simran";
+  if (!VOICES.some(function (voice) { return voice.id === selectedVoice; })) {
+    selectedVoice = "simran";
+    localStorage.setItem("amira_voice", selectedVoice);
+  }
 
   function renderVoiceList() {
     var lang = voiceLangFilter.value;
@@ -756,8 +815,11 @@ You received a call from {{fromNumber}}.</textarea></div>
   var livecard = document.getElementById("livecard");
   var liveLines = document.getElementById("live-lines");
   var remoteAudio = document.getElementById("remoteAudio");
-  var pc = null, micStream = null, live = false, connecting = false;
+  var pc = null, micStream = null, dc = null, live = false, connecting = false, stopping = false, muted = false;
   var partialEls = { user: null, bot: null };
+  var currentCallId = null, callTranscript = [], mediaRecorder = null, recordingChunks = [];
+  var recordingContext = null, recordingDestination = null;
+  var muteBtn = document.getElementById("mute-btn");
 
   function addLine(speaker, text, partial) {
     var slot = partialEls[speaker];
@@ -783,6 +845,12 @@ You received a call from {{fromNumber}}.</textarea></div>
     var d = msg.data || {};
     if (msg.type === "user-transcription" && d.text && d.text.trim()) addLine("user", d.text.trim(), !d.final);
     if (msg.type === "bot-transcription" && d.text && d.text.trim()) addLine("bot", d.text.trim(), false);
+    var text = (d.text || "").trim();
+    if (text && d.final !== false && (msg.type === "user-transcription" || msg.type === "bot-transcription")) {
+      var speaker = msg.type === "user-transcription" ? "caller" : "assistant";
+      var previous = callTranscript[callTranscript.length - 1];
+      if (!previous || previous.speaker !== speaker || previous.text !== text) callTranscript.push({ speaker: speaker, text: text, at: new Date().toISOString() });
+    }
   }
 
   function setLive(on) {
@@ -794,12 +862,38 @@ You received a call from {{fromNumber}}.</textarea></div>
     if (!on) { liveLines.innerHTML = ""; partialEls = { user: null, bot: null }; }
   }
 
-  function cleanup() {
+  function attachRecordingStream(stream) {
+    if (!recordingContext || !recordingDestination || !stream || !stream.getAudioTracks().length) return;
+    recordingContext.createMediaStreamSource(stream).connect(recordingDestination);
+  }
+
+  function finishRecording() {
+    if (!mediaRecorder || mediaRecorder.state === "inactive") return Promise.resolve(null);
+    return new Promise(function (resolve) {
+      mediaRecorder.addEventListener("stop", function () { resolve(recordingChunks.length ? new Blob(recordingChunks, { type: mediaRecorder.mimeType || "audio/webm" }) : null); }, { once: true });
+      mediaRecorder.stop();
+    });
+  }
+
+  async function cleanup() {
+    if (stopping) return;
+    stopping = true; testBtn.disabled = true; muteBtn.disabled = true;
+    var recording = await finishRecording();
     if (micStream) micStream.getTracks().forEach(function (t) { t.stop(); });
+    if (dc) try { dc.close(); } catch (_) {}
     if (pc) pc.close();
-    pc = micStream = null;
+    if (recordingContext) try { await recordingContext.close(); } catch (_) {}
+    if (currentCallId) try {
+      if (recording) await fetch(PIPECAT_BASE_URL + "/calls/" + currentCallId + "/recording", { method: "POST", headers: { "Content-Type": recording.type || "audio/webm" }, body: recording });
+      await fetch(PIPECAT_BASE_URL + "/calls/" + currentCallId + "/complete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ transcript: callTranscript }) });
+    } catch (err) { console.error("Could not finalize call history", err); }
+    pc = micStream = dc = null;
     connecting = false;
+    mediaRecorder = recordingContext = recordingDestination = null; recordingChunks = []; currentCallId = null; callTranscript = []; muted = false;
+    muteBtn.textContent = "Mute";
     setLive(false);
+    testBtn.disabled = false; stopping = false;
+    loadCallHistory();
   }
 
   function waitIce(pc) {
@@ -819,7 +913,7 @@ You received a call from {{fromNumber}}.</textarea></div>
     var lang = document.getElementById("test-lang").value;
     return {
       assistant: {
-        name: "Amira",
+        name: ls("amira_assistant_name") || "Amira",
         firstMessage: ls("amira_startmsg"),     // blank -> bot falls back to per-language greeting
         systemPrompt: ls("amira_custom_prompt"),
         voice: ls("amira_voice"),
@@ -843,6 +937,68 @@ You received a call from {{fromNumber}}.</textarea></div>
     };
   }
 
+  // Multiple assistants are browser-local for the prototype. Each record snapshots all
+  // dashboard configuration keys, so loading one restores every ability and business field.
+  var ASSISTANTS_KEY = "amiraSavedAssistants", ACTIVE_KEY = "amiraActiveAssistantId";
+  var savedAssistants = [], activeAssistantId = localStorage.getItem(ACTIVE_KEY) || "";
+  try { savedAssistants = JSON.parse(localStorage.getItem(ASSISTANTS_KEY) || "[]"); } catch (_) { savedAssistants = []; }
+  function snapshotStorage() {
+    var values = {};
+    for (var i = 0; i < localStorage.length; i++) { var key = localStorage.key(i); if (key && key.indexOf("amira_") === 0 && key !== ASSISTANTS_KEY && key !== ACTIVE_KEY) values[key] = localStorage.getItem(key); }
+    return values;
+  }
+  function renderAssistantOptions() {
+    var select = document.getElementById("assistant-select");
+    select.innerHTML = '<option value="">Unsaved draft</option>';
+    savedAssistants.forEach(function (item) { var option = document.createElement("option"); option.value = item.id; option.textContent = item.name || "Untitled assistant"; select.appendChild(option); });
+    select.value = activeAssistantId;
+  }
+  document.getElementById("save-assistant").addEventListener("click", function () {
+    var suggested = ls("amira_assistant_name") || "Amira";
+    var name = prompt("Assistant name", suggested); if (!name) return;
+    localStorage.setItem("amira_assistant_name", name);
+    if (!activeAssistantId) activeAssistantId = (crypto.randomUUID ? crypto.randomUUID() : "assistant-" + Date.now());
+    var record = { id: activeAssistantId, name: name, updatedAt: new Date().toISOString(), storage: snapshotStorage(), config: buildAssistantConfig() };
+    var index = savedAssistants.findIndex(function (item) { return item.id === activeAssistantId; });
+    if (index >= 0) savedAssistants[index] = record; else savedAssistants.push(record);
+    localStorage.setItem(ASSISTANTS_KEY, JSON.stringify(savedAssistants)); localStorage.setItem(ACTIVE_KEY, activeAssistantId);
+    document.querySelector("h1").firstChild.nodeValue = "Edit ‘" + name + "’ "; document.getElementById("save-state").textContent = "Saved"; renderAssistantOptions(); toast("Assistant saved");
+  });
+  document.getElementById("assistant-select").addEventListener("change", function (event) {
+    activeAssistantId = event.target.value; localStorage.setItem(ACTIVE_KEY, activeAssistantId);
+    var record = savedAssistants.find(function (item) { return item.id === activeAssistantId; }); if (!record) return;
+    Object.keys(record.storage || {}).forEach(function (key) { localStorage.setItem(key, record.storage[key]); }); location.reload();
+  });
+  document.getElementById("new-assistant").addEventListener("click", async function () {
+    if (live) await cleanup();
+    activeAssistantId = ""; localStorage.removeItem(ACTIVE_KEY);
+    ["amira_assistant_name","amira_biz","amira_industry","amira_website","amira_hours","amira_services","amira_startmsg","amira_custom_prompt","amira_answer_source","amira_answer_faqs","amira_kb"].forEach(function (key) { localStorage.removeItem(key); });
+    location.reload();
+  });
+  renderAssistantOptions();
+  var activeRecord = savedAssistants.find(function (item) { return item.id === activeAssistantId; });
+  if (activeRecord && activeRecord.name) document.querySelector("h1").firstChild.nodeValue = "Edit ‘" + activeRecord.name + "’ ";
+
+  var GREETINGS = {
+    en:function(c,a){return "Thank you for calling " + c + ". This is " + a + ". How can I help you today?";},
+    hi:function(c,a){return c + " में कॉल करने के लिए धन्यवाद। मैं " + a + " हूँ। मैं आपकी कैसे मदद कर सकता हूँ?";},
+    ta:function(c,a){return c + "-க்கு call பண்ணதுக்கு நன்றி. நான் " + a + ". உங்களுக்கு எப்படி help பண்ணலாம்?";},
+    te:function(c,a){return c + "కి call చేసినందుకు ధన్యవాదాలు. నేను " + a + ". మీకు ఎలా సహాయం చేయగలను?";},
+    kn:function(c,a){return c + "ಗೆ call ಮಾಡಿದ್ದಕ್ಕೆ ಧನ್ಯವಾದಗಳು. ನಾನು " + a + ". ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?";},
+    bn:function(c,a){return c + "-তে কল করার জন্য ধন্যবাদ। আমি " + a + "। আপনাকে কীভাবে সাহায্য করতে পারি?";},
+    mr:function(c,a){return c + " ला कॉल केल्याबद्दल धन्यवाद. मी " + a + ". मी तुम्हाला कशी मदत करू?";},
+    gu:function(c,a){return c + "ને call કરવા બદલ આભાર. હું " + a + ". હું તમારી કેવી રીતે મદદ કરી શકું?";},
+    ml:function(c,a){return c + "-ലേക്ക് call ചെയ്തതിന് നന്ദി. ഞാൻ " + a + ". എങ്ങനെ സഹായിക്കാം?";},
+    pa:function(c,a){return c + " ਨੂੰ call ਕਰਨ ਲਈ ਧੰਨਵਾਦ। ਮੈਂ " + a + " ਹਾਂ। ਮੈਂ ਤੁਹਾਡੀ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ?";},
+    od:function(c,a){return c + "କୁ call କରିଥିବାରୁ ଧନ୍ୟବାଦ। ମୁଁ " + a + "। ମୁଁ କିପରି ସାହାଯ୍ୟ କରିପାରିବି?";}
+  };
+  document.getElementById("test-lang").value = ls("amira_language") || "en";
+  document.getElementById("test-lang").addEventListener("change", function (event) {
+    var lang = event.target.value, company = ls("amira_biz") || user.business || "our company", assistant = ls("amira_assistant_name") || "Amira";
+    localStorage.setItem("amira_language", lang); localStorage.setItem("amira_startmsg", (GREETINGS[lang] || GREETINGS.en)(company, assistant));
+    toast("Language and greeting updated");
+  });
+
   async function startTest() {
     connecting = true;
     testBtn.disabled = true;
@@ -856,12 +1012,20 @@ You received a call from {{fromNumber}}.</textarea></div>
       var session = await startRes.json();
       if (!startRes.ok || !session.success) throw new Error("session failed");
 
+      var callStart = await fetch(PIPECAT_BASE_URL + "/calls/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ assistant_name: cfg.assistant.name, company_name: cfg.company.name, language: cfg.assistant.language }) });
+      if (callStart.ok) currentCallId = (await callStart.json()).id;
+      callTranscript = []; recordingChunks = [];
+
       micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+      recordingContext = new AudioContext(); recordingDestination = recordingContext.createMediaStreamDestination(); attachRecordingStream(micStream);
+      var mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm";
+      mediaRecorder = new MediaRecorder(recordingDestination.stream, { mimeType: mimeType });
+      mediaRecorder.ondataavailable = function (event) { if (event.data.size) recordingChunks.push(event.data); }; mediaRecorder.start(1000);
       pc = new RTCPeerConnection({ iceServers: session.iceConfig.iceServers });
-      var dc = pc.createDataChannel("pipecat-ai");
+      dc = pc.createDataChannel("pipecat-ai");
       dc.onmessage = function (e) { handleRTVI(e.data); };
       micStream.getTracks().forEach(function (t) { pc.addTrack(t, micStream); });
-      pc.ontrack = function (e) { remoteAudio.srcObject = e.streams[0]; remoteAudio.play().catch(function () {}); };
+      pc.ontrack = function (e) { remoteAudio.srcObject = e.streams[0]; attachRecordingStream(e.streams[0]); remoteAudio.play().catch(function () {}); };
       pc.onconnectionstatechange = function () {
         if (live && ["failed", "disconnected", "closed"].indexOf(pc && pc.connectionState) >= 0) cleanup();
       };
@@ -876,6 +1040,7 @@ You received a call from {{fromNumber}}.</textarea></div>
       if (!offerRes.ok) throw new Error("offer failed");
       await pc.setRemoteDescription(await offerRes.json());
       setLive(true);
+      muteBtn.disabled = false;
     } catch (err) {
       console.error("Test call error:", err);
       cleanup();
@@ -891,6 +1056,77 @@ You received a call from {{fromNumber}}.</textarea></div>
     if (live) { cleanup(); return; }
     if (!connecting) startTest();
   });
+  muteBtn.addEventListener("click", function () {
+    if (!micStream) return; muted = !muted;
+    micStream.getAudioTracks().forEach(function (track) { track.enabled = !muted; });
+    muteBtn.textContent = muted ? "Unmute" : "Mute";
+  });
+
+  function historyEsc(value) { return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) { return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch]; }); }
+  async function loadCallHistory() {
+    var list = document.getElementById("call-history-list");
+    try {
+      var response = await fetch(PIPECAT_BASE_URL + "/calls"); if (!response.ok) throw new Error("history unavailable");
+      var calls = await response.json();
+      if (!calls.length) { list.innerHTML = '<div class="empty-history">No browser test calls yet. Start one and it will appear here.</div>'; return; }
+      list.innerHTML = calls.map(function (call) {
+        var when = new Date(call.started_at * 1000).toLocaleString();
+        var duration = Math.floor(call.duration_seconds / 60) + ":" + String(Math.round(call.duration_seconds % 60)).padStart(2, "0");
+        var transcript = (call.transcript || []).map(function (line) { return '<div class="transcript-line"><b>' + historyEsc(line.speaker) + ':</b> ' + historyEsc(line.text) + '</div>'; }).join("") || '<div class="history-meta">No transcript captured.</div>';
+        var audio = call.has_recording ? '<audio controls preload="none" style="width:100%;" src="' + PIPECAT_BASE_URL + '/calls/' + encodeURIComponent(call.id) + '/recording"></audio>' : '<div class="history-meta">No recording available.</div>';
+        return '<div class="history-card"><div class="history-row"><div><b>' + historyEsc(call.assistant_name) + '</b><div class="history-meta">' + historyEsc(call.company_name) + '</div></div><div>' + historyEsc(when) + '</div><div>' + historyEsc(String(call.language || "").toUpperCase()) + '</div><div>' + duration + '</div><div>₹' + Number(call.estimated_cost_inr || 0).toFixed(2) + ' ▾</div></div><div class="history-detail"><div class="history-section"><h4>Outcome</h4><div>' + historyEsc(call.outcome || "Pending") + '</div></div><div class="history-section"><h4>Summary</h4><div>' + historyEsc(call.summary || "Summary pending") + '</div></div><div class="history-section"><h4>Recording</h4>' + audio + '</div><div class="history-section"><h4>Full transcript</h4>' + transcript + '</div><div class="history-meta">Estimated browser-test cost based on configured STT/TTS rates.</div></div></div>';
+      }).join("");
+      list.querySelectorAll(".history-row").forEach(function (row) { row.addEventListener("click", function () { row.parentElement.classList.toggle("open"); }); });
+    } catch (err) { list.innerHTML = '<div class="empty-history">Could not load call history. Make sure the voice backend is running.</div>'; }
+  }
+  function readKnowledge() { try { return JSON.parse(localStorage.getItem("amira_kb") || "[]"); } catch (_) { return []; } }
+  function writeKnowledge(items) { localStorage.setItem("amira_kb", JSON.stringify(items)); renderKnowledgePage(); }
+  function renderKnowledgePage() {
+    var list = document.getElementById("knowledge-list"), items = readKnowledge();
+    if (!items.length) { list.innerHTML = '<div class="empty-history" style="margin-top:14px;padding:28px">No sources yet.</div>'; return; }
+    list.innerHTML = items.map(function (item, index) {
+      return '<div class="kb-source"><div><div class="kb-source-name">' + historyEsc(item.name || "Untitled source") + '</div><div class="kb-source-meta">' + Number((item.text || "").length).toLocaleString() + ' characters</div></div><button class="kb-remove" data-kb-index="' + index + '">Remove</button></div>';
+    }).join("");
+    list.querySelectorAll(".kb-remove").forEach(function (button) { button.addEventListener("click", function () { var docs = readKnowledge(); docs.splice(Number(button.dataset.kbIndex), 1); writeKnowledge(docs); toast("Source removed"); }); });
+  }
+  function addKnowledgeSource(name, content) {
+    content = String(content || "").trim(); if (!content) { toast("Add some source content first"); return; }
+    var items = readKnowledge(); items.push({ name: String(name || "Reference notes").trim(), text: content.slice(0, 8000), type: "text/plain", addedAt: new Date().toISOString() });
+    writeKnowledge(items); toast("Knowledge source added");
+  }
+  document.getElementById("knowledge-add").addEventListener("click", function () {
+    addKnowledgeSource(document.getElementById("knowledge-name").value, document.getElementById("knowledge-text").value);
+    document.getElementById("knowledge-name").value = ""; document.getElementById("knowledge-text").value = "";
+  });
+  var knowledgeDrop = document.getElementById("knowledge-drop"), knowledgeFile = document.getElementById("knowledge-file");
+  knowledgeDrop.addEventListener("click", function () { knowledgeFile.click(); });
+  knowledgeDrop.addEventListener("dragover", function (event) { event.preventDefault(); knowledgeDrop.classList.add("over"); });
+  knowledgeDrop.addEventListener("dragleave", function () { knowledgeDrop.classList.remove("over"); });
+  knowledgeDrop.addEventListener("drop", function (event) { event.preventDefault(); knowledgeDrop.classList.remove("over"); importKnowledgeFiles(event.dataTransfer.files); });
+  knowledgeFile.addEventListener("change", function () { importKnowledgeFiles(knowledgeFile.files); knowledgeFile.value = ""; });
+  function importKnowledgeFiles(files) {
+    Array.from(files || []).forEach(function (file) {
+      if (!/\.(txt|md)$/i.test(file.name)) { toast("Use TXT or Markdown files for browser testing"); return; }
+      var reader = new FileReader(); reader.onload = function (event) { addKnowledgeSource(file.name, event.target.result); }; reader.readAsText(file);
+    });
+  }
+  renderKnowledgePage();
+
+  function showView(view) {
+    document.getElementById("assistant-view").classList.toggle("view-hidden", view !== "assistants");
+    document.getElementById("history-view").classList.toggle("view-hidden", view !== "history");
+    document.getElementById("knowledge-view").classList.toggle("view-hidden", view !== "knowledge");
+    document.getElementById("nav-assistants").classList.toggle("on", view === "assistants");
+    document.getElementById("nav-history").classList.toggle("on", view === "history");
+    document.getElementById("nav-knowledge").classList.toggle("on", view === "knowledge");
+    document.querySelector(".callbar").classList.toggle("view-hidden", view !== "assistants");
+    if (view === "history") loadCallHistory();
+    if (view === "knowledge") renderKnowledgePage();
+  }
+  document.getElementById("nav-history").addEventListener("click", function () { showView("history"); });
+  document.getElementById("nav-knowledge").addEventListener("click", function () { showView("knowledge"); });
+  document.getElementById("nav-assistants").addEventListener("click", function () { showView("assistants"); });
+  document.getElementById("refresh-history").addEventListener("click", loadCallHistory);
 })();
 </script>
 </body>

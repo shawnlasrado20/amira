@@ -498,6 +498,17 @@ class TourAdvancer(FrameProcessor):
         await self.push_frame(frame, direction)
 
 
+# Bulbul v3 speaker names accepted by Sarvam. Keep this server-side allowlist so an
+# old browser draft containing a v2-only speaker cannot break TTS for an entire call.
+BULBUL_V3_VOICES = {
+    "shubh", "aditya", "rahul", "rohan", "amit", "dev", "ratan", "varun",
+    "manan", "sumit", "kabir", "aayan", "ashutosh", "advait", "anand", "tarun",
+    "sunny", "mani", "gokul", "vijay", "mohit", "rehan", "soham", "ritu", "priya",
+    "neha", "pooja", "simran", "kavya", "ishita", "shreya", "roopa", "tanya",
+    "shruti", "suhani", "kavitha", "rupali",
+}
+
+
 def _clean(value, limit: int) -> str:
     return str(value or "").strip()[:limit]
 
@@ -554,6 +565,9 @@ async def run_bot(
     configured = (assistant_config or {}).get("assistant") or {}
     greeting = _clean(configured.get("firstMessage"), 500) or cfg["greeting"]
     system_prompt = _build_system_prompt(cfg["tone"], assistant_config)
+    requested_voice = _clean(configured.get("voice"), 40).lower()
+    voice = requested_voice if requested_voice in BULBUL_V3_VOICES else cfg["voice"]
+    logger.info("Starting voice session: language={}, voice={}, configured={}", language, voice, bool(assistant_config))
 
     # saaras:v3 replaces saarika:v2.5 (now officially "Legacy" in Sarvam docs).
     # mode="codemix" outputs English words in English script and Indic words in native
@@ -572,7 +586,7 @@ async def run_bot(
         api_key=os.getenv("SARVAM_API_KEY"),
         settings=SarvamTTSService.Settings(
             model="bulbul:v3",
-            voice=cfg["voice"],
+            voice=voice,
             language=cfg["tts"],
             pace=1.1,        # slightly snappier delivery (range 0.5–2.0 for v3)
             temperature=0.5, # lower = more stable, fewer audio artifacts
@@ -617,6 +631,9 @@ async def run_bot(
         context,
         user_params=LLMUserAggregatorParams(
             vad_analyzer=vad_analyzer,
+            # Safety net for browsers/microphones where VAD or smart-turn misses the
+            # stop event even though Sarvam has already emitted a final transcript.
+            user_turn_stop_timeout=3.0,
         ),
     )
 

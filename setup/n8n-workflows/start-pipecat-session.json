@@ -1,7 +1,7 @@
 {
   "name": "AMIRA - Start Pipecat Session",
-  "active": true,
-  "versionId": "a1b2c3d4-e5f6-4a00-8a00-000000000010",
+  "active": false,
+  "versionId": "be548c3d-8fd3-4604-8231-97d1806a5fff",
   "nodes": [
     {
       "parameters": {
@@ -133,6 +133,5 @@
   },
   "settings": {
     "executionOrder": "v1"
-  },
-  "id": "Isyq6CiuDBePRdOY"
+  }
 }

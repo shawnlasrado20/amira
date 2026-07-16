@@ -14,10 +14,14 @@ GET /metrics   → JSON cost metrics for the running server
 """
 
 import asyncio
+import json
+import os
+import sqlite3
 import time
 import uuid
 from contextlib import asynccontextmanager
 from http import HTTPMethod
+from pathlib import Path
 from textwrap import dedent
 from typing import Any
 
@@ -26,7 +30,8 @@ from dotenv import load_dotenv
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
+from groq import AsyncGroq
 from loguru import logger
 from pipecat_ai_small_webrtc_prebuilt.frontend import SmallWebRTCPrebuiltUI
 
@@ -50,6 +55,66 @@ RATE_TTS_PER_MIN = 1.80
 RATE_LLM_PER_MIN = 0.00
 RATE_TOTAL_PER_MIN = RATE_STT_PER_MIN + RATE_TTS_PER_MIN + RATE_LLM_PER_MIN
 
+DATA_DIR = Path(__file__).parent / "data"
+RECORDINGS_DIR = DATA_DIR / "recordings"
+CALLS_DB = DATA_DIR / "calls.sqlite3"
+
+
+def _db() -> sqlite3.Connection:
+    connection = sqlite3.connect(CALLS_DB)
+    connection.row_factory = sqlite3.Row
+    return connection
+
+
+def _init_calls_db() -> None:
+    DATA_DIR.mkdir(exist_ok=True)
+    RECORDINGS_DIR.mkdir(exist_ok=True)
+    with _db() as connection:
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS calls (
+                id TEXT PRIMARY KEY,
+                assistant_name TEXT NOT NULL,
+                company_name TEXT NOT NULL,
+                language TEXT NOT NULL,
+                started_at REAL NOT NULL,
+                ended_at REAL,
+                duration_seconds REAL DEFAULT 0,
+                status TEXT NOT NULL DEFAULT 'in_progress',
+                transcript_json TEXT NOT NULL DEFAULT '[]',
+                summary TEXT NOT NULL DEFAULT '',
+                outcome TEXT NOT NULL DEFAULT '',
+                estimated_cost_inr REAL DEFAULT 0,
+                recording_filename TEXT
+            )
+        """)
+
+
+async def _summarize_call(transcript: list[dict[str, Any]]) -> tuple[str, str]:
+    if not transcript:
+        return "No conversation was captured.", "No transcript"
+    conversation = "\n".join(
+        f"{str(item.get('speaker', 'unknown')).upper()}: {str(item.get('text', ''))[:2000]}"
+        for item in transcript[-120:]
+    )
+    try:
+        client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
+        response = await client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            temperature=0.2,
+            max_tokens=300,
+            messages=[
+                {"role": "system", "content": "Summarize a voice receptionist call. Return exactly two sections: SUMMARY: a concise factual paragraph; OUTCOME: one short label and result. Do not invent details."},
+                {"role": "user", "content": conversation[:24000]},
+            ],
+        )
+        text = response.choices[0].message.content or ""
+        summary = text.split("OUTCOME:", 1)[0].replace("SUMMARY:", "").replace("##", "").strip()
+        outcome = text.split("OUTCOME:", 1)[1].replace("##", "").strip() if "OUTCOME:" in text else "Completed"
+        return summary or "Call completed.", outcome or "Completed"
+    except Exception as exc:
+        logger.warning(f"Call summary generation failed: {exc}")
+        return f"Call completed with {len(transcript)} transcript messages.", "Completed"
+
 # active_sessions: session_id → request body (from /start)
 active_sessions: dict[str, dict[str, Any]] = {}
 
@@ -64,6 +129,7 @@ ice_servers = [IceServer(urls="stun:stun.l.google.com:19302")]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _init_calls_db()
     yield
     await asyncio.gather(*(pc.disconnect() for pc in pcs_map.values()))
     pcs_map.clear()
@@ -278,6 +344,97 @@ async def metrics():
             "total_per_min_inr": RATE_TOTAL_PER_MIN,
         },
     }
+
+
+@app.get("/sessions/{session_id}/context-status", include_in_schema=False)
+async def session_context_status(session_id: str):
+    """Local prototype diagnostic: confirms routing without returning tenant content."""
+    data = active_sessions.get(session_id)
+    if data is None:
+        return Response(content="Invalid or expired session_id", status_code=404)
+    config = data.get("assistantConfig") if isinstance(data, dict) else None
+    return {
+        "configured": isinstance(config, dict),
+        "has_company": bool((config or {}).get("company")),
+        "has_assistant": bool((config or {}).get("assistant")),
+        "language": data.get("language") if isinstance(data, dict) else None,
+    }
+
+
+@app.post("/calls/start")
+async def create_call_record(payload: dict[str, Any]):
+    call_id = str(uuid.uuid4())
+    with _db() as connection:
+        connection.execute(
+            "INSERT INTO calls (id, assistant_name, company_name, language, started_at) VALUES (?, ?, ?, ?, ?)",
+            (
+                call_id,
+                str(payload.get("assistant_name") or "Assistant")[:120],
+                str(payload.get("company_name") or "Company")[:180],
+                str(payload.get("language") or "en")[:20],
+                time.time(),
+            ),
+        )
+    return {"id": call_id}
+
+
+@app.post("/calls/{call_id}/recording")
+async def save_call_recording(call_id: str, request: Request):
+    audio = await request.body()
+    if not audio:
+        return Response(content="Empty recording", status_code=400)
+    if len(audio) > 100 * 1024 * 1024:
+        return Response(content="Recording too large", status_code=413)
+    filename = f"{call_id}.webm"
+    (RECORDINGS_DIR / filename).write_bytes(audio)
+    with _db() as connection:
+        connection.execute("UPDATE calls SET recording_filename=? WHERE id=?", (filename, call_id))
+    return {"saved": True}
+
+
+@app.post("/calls/{call_id}/complete")
+async def complete_call_record(call_id: str, payload: dict[str, Any]):
+    transcript = payload.get("transcript") if isinstance(payload.get("transcript"), list) else []
+    ended_at = time.time()
+    with _db() as connection:
+        row = connection.execute("SELECT started_at FROM calls WHERE id=?", (call_id,)).fetchone()
+    if row is None:
+        return Response(content="Call not found", status_code=404)
+    duration = max(0.0, ended_at - float(row["started_at"]))
+    summary, outcome = await _summarize_call(transcript)
+    estimated_cost = round((duration / 60) * RATE_TOTAL_PER_MIN, 4)
+    with _db() as connection:
+        connection.execute(
+            """UPDATE calls SET ended_at=?, duration_seconds=?, status='completed', transcript_json=?,
+               summary=?, outcome=?, estimated_cost_inr=? WHERE id=?""",
+            (ended_at, duration, json.dumps(transcript, ensure_ascii=False), summary, outcome, estimated_cost, call_id),
+        )
+    return {"completed": True, "summary": summary, "outcome": outcome, "estimated_cost_inr": estimated_cost}
+
+
+@app.get("/calls")
+async def list_call_records():
+    with _db() as connection:
+        rows = connection.execute("SELECT * FROM calls ORDER BY started_at DESC LIMIT 250").fetchall()
+    records = []
+    for row in rows:
+        item = dict(row)
+        item["transcript"] = json.loads(item.pop("transcript_json") or "[]")
+        item["has_recording"] = bool(item.pop("recording_filename"))
+        records.append(item)
+    return records
+
+
+@app.get("/calls/{call_id}/recording")
+async def get_call_recording(call_id: str):
+    with _db() as connection:
+        row = connection.execute("SELECT recording_filename FROM calls WHERE id=?", (call_id,)).fetchone()
+    if row is None or not row["recording_filename"]:
+        return Response(content="Recording not found", status_code=404)
+    path = RECORDINGS_DIR / row["recording_filename"]
+    if not path.exists():
+        return Response(content="Recording not found", status_code=404)
+    return FileResponse(path, media_type="audio/webm", filename=path.name)
 
 
 # ---------------------------------------------------------------------------
