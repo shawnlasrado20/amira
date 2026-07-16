@@ -56,6 +56,11 @@
   .panel textarea { width: 100%; min-height: 120px; font-family: inherit; font-size: 14px; padding: 12px 14px; border: 1.5px solid #ddd3c3; border-radius: 12px; background: #fff; color: var(--ink); resize: vertical; }
   .panel textarea:focus { outline: none; border-color: var(--accent); }
   .save-mini { margin-top: 10px; background: var(--ink); color: #f6f1e9; border: none; border-radius: 100px; padding: 10px 20px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .fl { display: block; font-size: 13px; font-weight: 600; color: #574f45; margin: 14px 0 6px; }
+  .fl:first-child { margin-top: 0; }
+  .fi { width: 100%; font-family: inherit; font-size: 14px; padding: 11px 13px; border: 1.5px solid #ddd3c3; border-radius: 11px; background: #fff; color: var(--ink); }
+  textarea.fi { min-height: 80px; resize: vertical; }
+  .fi:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); }
 
   /* ── modal ── */
   .overlay { display: none; position: fixed; inset: 0; background: rgba(20,16,14,.45); z-index: 90; align-items: center; justify-content: center; padding: 20px; }
@@ -370,11 +375,16 @@ You received a call from {{fromNumber}}.</textarea></div>
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
   var bizName = esc(user.business || "your business");
   var panels = {
-    essentials: { t: "Essentials", d: "The basics of how Amira presents herself on every call.",
-      b: '<div class="prow"><div><div class="t">Assistant name</div><div class="d">Amira</div></div><span>›</span></div>' +
-         '<div class="prow"><div><div class="t">Business</div><div class="d">' + bizName + '</div></div><span>›</span></div>' +
-         '<div class="prow" id="voice-row"><div><div class="t">Voice</div><div class="d" id="voice-row-desc">Warm female · natural Indian accent</div></div><span>›</span></div>' +
-         '<div class="prow"><div><div class="t">Languages</div><div class="d">All 11 — auto-detected per caller</div></div><span>›</span></div>' },
+    essentials: { t: "Essentials", d: "Tell Amira about your business — she uses this on every call.",
+      b: '<label class="fl">Business name</label><input class="fi" id="f-biz" placeholder="Saffron House" />' +
+         '<label class="fl">Business type</label><input class="fi" id="f-industry" placeholder="Restaurant, clinic, salon…" />' +
+         '<label class="fl">Website</label><input class="fi" id="f-website" placeholder="https://…" />' +
+         '<label class="fl">Location &amp; hours</label><textarea class="fi" id="f-hours" placeholder="Ground floor Marina Walk · Mon–Sun, 12pm–11pm"></textarea>' +
+         '<label class="fl">Services &amp; policies</label><textarea class="fi" id="f-services" placeholder="Popular dishes, prices, booking rules, anything Amira should know…"></textarea>' +
+         '<label class="fl">Start message (greeting)</label><textarea class="fi" id="f-startmsg" placeholder="Leave blank to use the default greeting in each language"></textarea>' +
+         '<div class="prow" id="voice-row" style="margin-top:14px;"><div><div class="t">Voice</div><div class="d" id="voice-row-desc">Warm female · natural Indian accent</div></div><span>›</span></div>' +
+         '<div class="prow"><div><div class="t">Languages</div><div class="d">All 11 — auto-detected per caller</div></div><span>›</span></div>' +
+         '<button class="save-mini" id="save-essentials">Save</button>' },
     answers: { t: "Answer questions", d: "Amira answers FAQs from the business info you give her.",
       b: '<div class="prow"><div><div class="t">Company information</div><div class="d">Hours, location, services, prices</div></div><span>›</span></div>' +
          '<div class="prow"><div><div class="t">Additional documents (PDFs)</div><div class="d">Menus, price lists, T&amp;Cs</div></div><span>›</span></div>' +
@@ -406,6 +416,32 @@ You received a call from {{fromNumber}}.</textarea></div>
     document.getElementById("p-title").textContent = p.t;
     document.getElementById("p-desc").textContent = p.d;
     document.getElementById("p-body").innerHTML = p.b;
+
+    // Essentials: real editable business fields, restore + debounced autosave + Save.
+    var essFields = { "f-biz": "amira_biz", "f-industry": "amira_industry", "f-website": "amira_website",
+                      "f-hours": "amira_hours", "f-services": "amira_services", "f-startmsg": "amira_startmsg" };
+    var essSave = document.getElementById("save-essentials");
+    if (essSave) {
+      Object.keys(essFields).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        if (id === "f-biz") el.value = localStorage.getItem("amira_biz") || user.business || "";
+        else el.value = localStorage.getItem(essFields[id]) || "";
+        var timer;
+        el.addEventListener("input", function () {
+          clearTimeout(timer);
+          timer = setTimeout(function () { localStorage.setItem(essFields[id], el.value); }, 300);
+        });
+      });
+      essSave.addEventListener("click", function () {
+        Object.keys(essFields).forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) localStorage.setItem(essFields[id], el.value);
+        });
+        toast("Changes saved!");
+      });
+    }
+
     var save = document.getElementById("save-info");
     if (save) {
       var box = document.getElementById("company-info");
@@ -684,17 +720,17 @@ You received a call from {{fromNumber}}.</textarea></div>
     return {
       assistant: {
         name: "Amira",
-        firstMessage: "",                       // fall back to the per-language greeting
+        firstMessage: ls("amira_startmsg"),     // blank -> bot falls back to per-language greeting
         systemPrompt: ls("amira_custom_prompt"),
         voice: ls("amira_voice"),
         language: lang
       },
       company: {
-        name: user.business || "",
-        industry: "",
-        website: "",
-        locationHours: "",
-        servicesPolicies: ls("amira_company_info")
+        name: ls("amira_biz") || user.business || "",
+        industry: ls("amira_industry"),
+        website: ls("amira_website"),
+        locationHours: ls("amira_hours"),
+        servicesPolicies: ls("amira_services") || ls("amira_company_info")
       },
       abilities: {
         answerQuestions: { enabled: true, qa: ls("amira_company_info") }
