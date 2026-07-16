@@ -158,6 +158,15 @@
   .history-section h4 { margin:0 0 7px; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
   .transcript-line { margin:0 0 7px; line-height:1.5; }
   .empty-history { padding:42px; text-align:center; border:1px dashed var(--line); border-radius:16px; color:var(--muted); }
+  .kb-grid { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr); gap:20px; }
+  .kb-card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px; }
+  .kb-card h3 { margin:0 0 6px; font-size:18px; }
+  .kb-card .pd { margin-bottom:16px; }
+  .kb-source { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 0; border-bottom:1px solid var(--line); }
+  .kb-source:last-child { border-bottom:0; }
+  .kb-source-name { font-weight:600; font-size:13px; }
+  .kb-source-meta { color:var(--muted); font-size:11px; margin-top:3px; }
+  .kb-remove { border:0; background:transparent; color:#a34a3e; cursor:pointer; font:inherit; font-size:12px; }
   @media (max-width: 900px) { .shell { grid-template-columns: 1fr; } .side { display: none; } .cols { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -171,7 +180,7 @@
     <div class="nav-item">Home</div>
     <div class="sec">Contents</div>
     <div class="nav-item on" id="nav-assistants">Assistants</div>
-    <div class="nav-item">Knowledge Base</div>
+    <div class="nav-item" id="nav-knowledge">Knowledge Base</div>
     <div class="nav-item">Phone Numbers</div>
     <div class="nav-item" id="nav-history">Call History</div>
     <div class="sec">Admin</div>
@@ -266,6 +275,23 @@
       <div class="crumb">Home <span>›</span> <b>Call History</b></div>
       <div class="history-head"><div><h1>Call History</h1><p class="sub">Browser test calls, transcripts, summaries and recordings.</p></div><button class="btn-ghost" id="refresh-history">Refresh</button></div>
       <div class="history-list" id="call-history-list"><div class="empty-history">Loading calls…</div></div>
+    </section>
+    <section id="knowledge-view" class="view-hidden">
+      <div class="crumb">Home <span>›</span> <b>Knowledge Base</b></div>
+      <div class="history-head"><div><h1>Knowledge Base</h1><p class="sub">Business information the assistant can use during every call.</p></div></div>
+      <div class="kb-grid">
+        <div class="kb-card">
+          <h3>Sources</h3><p class="pd">Upload plain-text documents or add reference notes. Saved sources are included in test calls automatically.</p>
+          <div class="kb-drop" id="knowledge-drop">Drop a TXT or Markdown file here, or click to upload<input type="file" id="knowledge-file" multiple accept=".txt,.md,text/plain,text/markdown" style="display:none" /></div>
+          <div id="knowledge-list"></div>
+        </div>
+        <div class="kb-card">
+          <h3>Add reference text</h3><p class="pd">Paste menus, FAQs, policies, product information, or other facts.</p>
+          <label class="fl">Source name</label><input class="fi" id="knowledge-name" placeholder="Delivery policy" />
+          <label class="fl">Content</label><textarea class="fi" id="knowledge-text" style="min-height:190px" placeholder="Orders above AED 150 receive free delivery within Dubai…"></textarea>
+          <button class="btn-ink" id="knowledge-add">Add to knowledge base</button>
+        </div>
+      </div>
     </section>
   </main>
 </div>
@@ -602,18 +628,22 @@ You received a call from {{fromNumber}}.</textarea></div>
   var VOICES = [
     { id: "ratan", name: "Ratan", desc: "Warm male · Hindi & South Indian", lang: "multi" },
     { id: "shubh", name: "Shubh", desc: "Confident male · Hindi & Telugu", lang: "multi" },
-    { id: "anushka", name: "Anushka", desc: "Warm female · natural Indian accent", lang: "multi" },
+    { id: "simran", name: "Simran", desc: "Warm female · natural Indian accent", lang: "multi" },
     { id: "priya", name: "Priya", desc: "Bright female · English & Hindi", lang: "en" },
     { id: "kavya", name: "Kavya", desc: "Calm female · Tamil & English", lang: "ta" },
     { id: "rahul", name: "Rahul", desc: "Friendly male · English", lang: "en" },
-    { id: "arya", name: "Arya", desc: "Crisp female · Hindi", lang: "hi" },
+    { id: "ishita", name: "Ishita", desc: "Crisp female · Hindi", lang: "hi" },
     { id: "vijay", name: "Vijay", desc: "Deep male · Tamil", lang: "ta" }
   ];
   var voiceOverlay = document.getElementById("voice-overlay");
   var voiceList = document.getElementById("voice-list");
   var voiceLangFilter = document.getElementById("v-lang-filter");
   var voiceScope = "all";
-  var selectedVoice = localStorage.getItem("amira_voice") || "anushka";
+  var selectedVoice = localStorage.getItem("amira_voice") || "simran";
+  if (!VOICES.some(function (voice) { return voice.id === selectedVoice; })) {
+    selectedVoice = "simran";
+    localStorage.setItem("amira_voice", selectedVoice);
+  }
 
   function renderVoiceList() {
     var lang = voiceLangFilter.value;
@@ -1049,16 +1079,53 @@ You received a call from {{fromNumber}}.</textarea></div>
       list.querySelectorAll(".history-row").forEach(function (row) { row.addEventListener("click", function () { row.parentElement.classList.toggle("open"); }); });
     } catch (err) { list.innerHTML = '<div class="empty-history">Could not load call history. Make sure the voice backend is running.</div>'; }
   }
-  function showView(history) {
-    document.getElementById("assistant-view").classList.toggle("view-hidden", history);
-    document.getElementById("history-view").classList.toggle("view-hidden", !history);
-    document.getElementById("nav-assistants").classList.toggle("on", !history);
-    document.getElementById("nav-history").classList.toggle("on", history);
-    document.querySelector(".callbar").classList.toggle("view-hidden", history);
-    if (history) loadCallHistory();
+  function readKnowledge() { try { return JSON.parse(localStorage.getItem("amira_kb") || "[]"); } catch (_) { return []; } }
+  function writeKnowledge(items) { localStorage.setItem("amira_kb", JSON.stringify(items)); renderKnowledgePage(); }
+  function renderKnowledgePage() {
+    var list = document.getElementById("knowledge-list"), items = readKnowledge();
+    if (!items.length) { list.innerHTML = '<div class="empty-history" style="margin-top:14px;padding:28px">No sources yet.</div>'; return; }
+    list.innerHTML = items.map(function (item, index) {
+      return '<div class="kb-source"><div><div class="kb-source-name">' + historyEsc(item.name || "Untitled source") + '</div><div class="kb-source-meta">' + Number((item.text || "").length).toLocaleString() + ' characters</div></div><button class="kb-remove" data-kb-index="' + index + '">Remove</button></div>';
+    }).join("");
+    list.querySelectorAll(".kb-remove").forEach(function (button) { button.addEventListener("click", function () { var docs = readKnowledge(); docs.splice(Number(button.dataset.kbIndex), 1); writeKnowledge(docs); toast("Source removed"); }); });
   }
-  document.getElementById("nav-history").addEventListener("click", function () { showView(true); });
-  document.getElementById("nav-assistants").addEventListener("click", function () { showView(false); });
+  function addKnowledgeSource(name, content) {
+    content = String(content || "").trim(); if (!content) { toast("Add some source content first"); return; }
+    var items = readKnowledge(); items.push({ name: String(name || "Reference notes").trim(), text: content.slice(0, 8000), type: "text/plain", addedAt: new Date().toISOString() });
+    writeKnowledge(items); toast("Knowledge source added");
+  }
+  document.getElementById("knowledge-add").addEventListener("click", function () {
+    addKnowledgeSource(document.getElementById("knowledge-name").value, document.getElementById("knowledge-text").value);
+    document.getElementById("knowledge-name").value = ""; document.getElementById("knowledge-text").value = "";
+  });
+  var knowledgeDrop = document.getElementById("knowledge-drop"), knowledgeFile = document.getElementById("knowledge-file");
+  knowledgeDrop.addEventListener("click", function () { knowledgeFile.click(); });
+  knowledgeDrop.addEventListener("dragover", function (event) { event.preventDefault(); knowledgeDrop.classList.add("over"); });
+  knowledgeDrop.addEventListener("dragleave", function () { knowledgeDrop.classList.remove("over"); });
+  knowledgeDrop.addEventListener("drop", function (event) { event.preventDefault(); knowledgeDrop.classList.remove("over"); importKnowledgeFiles(event.dataTransfer.files); });
+  knowledgeFile.addEventListener("change", function () { importKnowledgeFiles(knowledgeFile.files); knowledgeFile.value = ""; });
+  function importKnowledgeFiles(files) {
+    Array.from(files || []).forEach(function (file) {
+      if (!/\.(txt|md)$/i.test(file.name)) { toast("Use TXT or Markdown files for browser testing"); return; }
+      var reader = new FileReader(); reader.onload = function (event) { addKnowledgeSource(file.name, event.target.result); }; reader.readAsText(file);
+    });
+  }
+  renderKnowledgePage();
+
+  function showView(view) {
+    document.getElementById("assistant-view").classList.toggle("view-hidden", view !== "assistants");
+    document.getElementById("history-view").classList.toggle("view-hidden", view !== "history");
+    document.getElementById("knowledge-view").classList.toggle("view-hidden", view !== "knowledge");
+    document.getElementById("nav-assistants").classList.toggle("on", view === "assistants");
+    document.getElementById("nav-history").classList.toggle("on", view === "history");
+    document.getElementById("nav-knowledge").classList.toggle("on", view === "knowledge");
+    document.querySelector(".callbar").classList.toggle("view-hidden", view !== "assistants");
+    if (view === "history") loadCallHistory();
+    if (view === "knowledge") renderKnowledgePage();
+  }
+  document.getElementById("nav-history").addEventListener("click", function () { showView("history"); });
+  document.getElementById("nav-knowledge").addEventListener("click", function () { showView("knowledge"); });
+  document.getElementById("nav-assistants").addEventListener("click", function () { showView("assistants"); });
   document.getElementById("refresh-history").addEventListener("click", loadCallHistory);
 })();
 </script>
