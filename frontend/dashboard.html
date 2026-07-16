@@ -61,6 +61,17 @@
   .fi { width: 100%; font-family: inherit; font-size: 14px; padding: 11px 13px; border: 1.5px solid #ddd3c3; border-radius: 11px; background: #fff; color: var(--ink); }
   textarea.fi { min-height: 80px; resize: vertical; }
   .fi:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); }
+  .kb-drop { border: 1.5px dashed #cfc5b6; border-radius: 12px; padding: 20px; text-align: center; color: var(--muted); font-size: 13px; cursor: pointer; transition: border-color .15s, background .15s; }
+  .kb-drop:hover, .kb-drop.drag { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+  .kb-doc { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; margin-top: 8px; font-size: 13px; }
+  .kb-doc .rm { margin-left: auto; color: var(--muted); cursor: pointer; font-weight: 700; }
+  .kb-doc .rm:hover { color: #b4232a; }
+  .fld-toggle { position: relative; width: 40px; height: 23px; border-radius: 100px; background: #cfc5b6; border: none; cursor: pointer; flex-shrink: 0; transition: background .18s; }
+  .fld-toggle.on { background: #2fae6b; }
+  .fld-toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 17px; height: 17px; border-radius: 50%; background: #fff; transition: left .18s; }
+  .fld-toggle.on::after { left: 20px; }
+  .row-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0 6px; }
+  .row-head .fl { margin: 0; }
 
   /* ── modal ── */
   .overlay { display: none; position: fixed; inset: 0; background: rgba(20,16,14,.45); z-index: 90; align-items: center; justify-content: center; padding: 20px; }
@@ -385,26 +396,33 @@ You received a call from {{fromNumber}}.</textarea></div>
          '<div class="prow" id="voice-row" style="margin-top:14px;"><div><div class="t">Voice</div><div class="d" id="voice-row-desc">Warm female · natural Indian accent</div></div><span>›</span></div>' +
          '<div class="prow"><div><div class="t">Languages</div><div class="d">All 11 — auto-detected per caller</div></div><span>›</span></div>' +
          '<button class="save-mini" id="save-essentials">Save</button>' },
-    answers: { t: "Answer questions", d: "Amira answers FAQs from the business info you give her.",
-      b: '<div class="prow"><div><div class="t">Company information</div><div class="d">Hours, location, services, prices</div></div><span>›</span></div>' +
-         '<div class="prow"><div><div class="t">Additional documents (PDFs)</div><div class="d">Menus, price lists, T&amp;Cs</div></div><span>›</span></div>' +
-         '<div class="prow"><div><div class="t">Web search</div><div class="d">Not enabled</div></div><span>＋</span></div>' +
-         '<label style="display:block;font-size:13px;font-weight:600;color:#574f45;margin:16px 0 7px;">Quick company info</label>' +
-         '<textarea id="company-info" placeholder="Opening hours, address, popular services…"></textarea>' +
-         '<button class="save-mini" id="save-info">Save</button>' },
+    answers: { t: "Answer questions", d: "Amira answers caller questions from your knowledge.",
+      b: '<label class="fl">Knowledge source</label><input class="fi" id="f-answer-source" placeholder="e.g. Saffron House FAQs" />' +
+         '<label class="fl">Questions &amp; answers</label><textarea class="fi" id="f-answer-faqs" style="min-height:130px;" placeholder="Q: What are your opening hours?\nA: Lunch 12–3pm, dinner 6–11pm, daily."></textarea>' +
+         '<label class="fl">Knowledge documents</label>' +
+         '<div class="kb-drop" id="kb-drop">Drop a PDF, TXT or DOC here, or click to upload<input type="file" id="kb-input" multiple accept=".pdf,.txt,.doc,.docx,.md" style="display:none" /></div>' +
+         '<div id="kb-list"></div>' +
+         '<button class="save-mini" id="save-answers">Save</button>' },
     transfer: { t: "Transfer calls", d: "Warm-transfer to the right person when a human is needed.",
       b: '<div id="transfer-list"></div><div class="prow" id="add-transfer-row"><div><div class="t">Add transfer</div><div class="d">Send calls to a person, number, or SIP endpoint</div></div><span>＋</span></div>' },
     email: { t: "Send email", d: "A clean summary in your inbox the moment each call ends.",
       b: '<div id="email-list"></div><div class="prow" id="add-email-row"><div><div class="t">Add another action</div><div class="d">Send automated emails with call data and templates</div></div><span>＋</span></div>' },
-    sms: { t: "Send SMS", d: "Text confirmations and follow-ups to callers automatically.",
-      b: '<div class="prow"><div><div class="t">Booking confirmation SMS</div><div class="d">Available on Growth and Scale</div></div><span>＋</span></div>' },
-    book: { t: "Book appointments", d: "Amira offers real slots and confirms on the call.",
-      b: '<div class="prow"><div><div class="t">Google Calendar</div><div class="d">Connected</div></div><span class="tail" style="color:#2fae6b;font-weight:700;">✓</span></div>' +
-         '<div class="prow"><div><div class="t">Booking rules</div><div class="d">Up to 30 days ahead · groups of 8+ get a callback</div></div><span>›</span></div>' },
-    webhooks: { t: "Webhooks", d: "Fire your own API calls when things happen on a call.",
-      b: '<div class="prow"><div><div class="t">Inbound webhook</div><div class="d">Trigger Amira from your systems</div></div><span>›</span></div>' +
-         '<div class="prow"><div><div class="t">Outbound API</div><div class="d">POST call data to your endpoint</div></div><span>›</span></div>' +
-         '<div class="prow"><div><div class="t">n8n integration</div><div class="d">Post-call logging workflow</div></div><span>›</span></div>' }
+    sms: { t: "Send SMS", d: "Text the caller a confirmation or follow-up.",
+      b: '<div class="row-head"><span class="fl">Enable SMS</span><button class="fld-toggle" id="t-sms" data-key="amira_sms_on"></button></div>' +
+         '<label class="fl">Trigger</label><select class="fi" id="f-sms-trigger"><option>When a booking is confirmed</option><option>After every call</option><option>On missed call</option></select>' +
+         '<label class="fl">Message template</label><textarea class="fi" id="f-sms-template" placeholder="Hi {name}, your booking is confirmed for {date} at {time}."></textarea>' +
+         '<button class="save-mini" id="save-sms">Save</button>' },
+    book: { t: "Book appointments", d: "Let Amira book slots straight into a calendar on the call.",
+      b: '<div class="row-head"><span class="fl">Enable booking</span><button class="fld-toggle on" id="t-booking" data-key="amira_booking_on"></button></div>' +
+         '<label class="fl">Calendar</label><select class="fi" id="f-booking-cal"><option>Google Calendar</option><option>Cal.com</option><option>Outlook</option><option>Not connected</option></select>' +
+         '<label class="fl">Slot length</label><select class="fi" id="f-booking-slot"><option>15 minutes</option><option selected>30 minutes</option><option>45 minutes</option><option>60 minutes</option></select>' +
+         '<label class="fl">Booking window</label><select class="fi" id="f-booking-window"><option>Up to 7 days ahead</option><option selected>Up to 30 days ahead</option><option>Up to 90 days ahead</option></select>' +
+         '<button class="save-mini" id="save-booking">Save</button>' },
+    webhooks: { t: "Webhooks", d: "Send call events to your backend (n8n).",
+      b: '<div class="row-head"><span class="fl">Enable webhooks</span><button class="fld-toggle on" id="t-webhooks" data-key="amira_webhooks_on"></button></div>' +
+         '<label class="fl">Endpoint URL</label><input class="fi" id="f-webhooks-url" placeholder="http://localhost:5678/webhook/amira-events" />' +
+         '<label class="fl">Events sent</label><select class="fi" id="f-webhooks-events"><option>end-of-call-report</option><option>status-update</option><option>transcript</option><option>all events</option></select>' +
+         '<button class="save-mini" id="save-webhooks">Save</button>' },
   };
 
   var abilities = document.querySelectorAll('#tab-behaviour .ability');
@@ -465,6 +483,88 @@ You received a call from {{fromNumber}}.</textarea></div>
     if (key === "email") {
       renderEmailList();
       document.getElementById("add-email-row").addEventListener("click", openEmailDrawer);
+    }
+
+    // Universal field persistence for every panel (answers/sms/booking/webhooks).
+    Object.keys(SIMPLE_FIELDS).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.value = localStorage.getItem(SIMPLE_FIELDS[id]) || el.value;
+      var timer;
+      el.addEventListener("input", function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () { localStorage.setItem(SIMPLE_FIELDS[id], el.value); }, 300);
+      });
+    });
+    // Enable/disable toggles
+    document.querySelectorAll("#p-body .fld-toggle").forEach(function (tg) {
+      var k = tg.dataset.key;
+      if (localStorage.getItem(k) === "off") tg.classList.remove("on");
+      else if (localStorage.getItem(k) === "on") tg.classList.add("on");
+      tg.addEventListener("click", function () {
+        tg.classList.toggle("on");
+        localStorage.setItem(k, tg.classList.contains("on") ? "on" : "off");
+      });
+    });
+    // Per-panel Save buttons -> just flash the toast (values already autosaved)
+    ["save-answers", "save-sms", "save-booking", "save-webhooks"].forEach(function (bid) {
+      var b = document.getElementById(bid);
+      if (b) b.addEventListener("click", function () { saveSimpleFields(); toast("Changes saved!"); });
+    });
+    // Knowledge Base uploader (answers panel)
+    if (key === "answers") wireKB();
+  }
+
+  // Field id -> localStorage key, for the simple ability panels.
+  var SIMPLE_FIELDS = {
+    "f-answer-source": "amira_answer_source", "f-answer-faqs": "amira_answer_faqs",
+    "f-sms-trigger": "amira_sms_trigger", "f-sms-template": "amira_sms_template",
+    "f-booking-cal": "amira_booking_cal", "f-booking-slot": "amira_booking_slot",
+    "f-booking-window": "amira_booking_window",
+    "f-webhooks-url": "amira_webhooks_url", "f-webhooks-events": "amira_webhooks_events"
+  };
+  function saveSimpleFields() {
+    Object.keys(SIMPLE_FIELDS).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) localStorage.setItem(SIMPLE_FIELDS[id], el.value);
+    });
+  }
+
+  // ── Knowledge Base: drag/drop + click upload, persisted as text in localStorage ──
+  function loadKB() { try { return JSON.parse(localStorage.getItem("amira_kb") || "[]"); } catch (e) { return []; } }
+  function saveKB(docs) { localStorage.setItem("amira_kb", JSON.stringify(docs)); }
+  function renderKB() {
+    var list = document.getElementById("kb-list");
+    if (!list) return;
+    var docs = loadKB();
+    list.innerHTML = docs.map(function (d, i) {
+      return '<div class="kb-doc"><span>📄</span><span>' + (d.name || "document") + '</span>' +
+             '<span class="rm" data-i="' + i + '">✕</span></div>';
+    }).join("");
+    list.querySelectorAll(".rm").forEach(function (x) {
+      x.addEventListener("click", function () { var d = loadKB(); d.splice(+x.dataset.i, 1); saveKB(d); renderKB(); });
+    });
+  }
+  function wireKB() {
+    var drop = document.getElementById("kb-drop");
+    var input = document.getElementById("kb-input");
+    if (!drop || !input) return;
+    renderKB();
+    drop.addEventListener("click", function () { input.click(); });
+    drop.addEventListener("dragover", function (e) { e.preventDefault(); drop.classList.add("drag"); });
+    drop.addEventListener("dragleave", function () { drop.classList.remove("drag"); });
+    drop.addEventListener("drop", function (e) { e.preventDefault(); drop.classList.remove("drag"); ingest(e.dataTransfer.files); });
+    input.addEventListener("change", function () { ingest(input.files); });
+    function ingest(files) {
+      var docs = loadKB();
+      Array.prototype.forEach.call(files, function (f) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          docs.push({ name: f.name, size: f.size, type: f.type, text: String(e.target.result).slice(0, 8000) });
+          saveKB(docs); renderKB(); toast("Document added");
+        };
+        reader.readAsText(f);
+      });
     }
   }
   abilities.forEach(function (a) { a.addEventListener("click", function () { openPanel(a.dataset.key); }); });
@@ -733,9 +833,12 @@ You received a call from {{fromNumber}}.</textarea></div>
         servicesPolicies: ls("amira_services") || ls("amira_company_info")
       },
       abilities: {
-        answerQuestions: { enabled: true, qa: ls("amira_company_info") }
+        answerQuestions: { enabled: true, knowledgeSource: ls("amira_answer_source"), qa: ls("amira_answer_faqs") || ls("amira_company_info") },
+        sendSms: { enabled: ls("amira_sms_on") === "on", trigger: ls("amira_sms_trigger"), template: ls("amira_sms_template") },
+        bookAppointments: { enabled: ls("amira_booking_on") !== "off", calendar: ls("amira_booking_cal"), slotLength: ls("amira_booking_slot"), bookingWindow: ls("amira_booking_window") },
+        webhooks: { enabled: ls("amira_webhooks_on") !== "off", endpointUrl: ls("amira_webhooks_url"), events: ls("amira_webhooks_events") }
       },
-      knowledgeBase: [],
+      knowledgeBase: (function () { try { return JSON.parse(localStorage.getItem("amira_kb") || "[]"); } catch (e) { return []; } })(),
       meta: { source: "Amira Dashboard" }
     };
   }
