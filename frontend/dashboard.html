@@ -167,7 +167,22 @@
   .kb-source-name { font-weight:600; font-size:13px; }
   .kb-source-meta { color:var(--muted); font-size:11px; margin-top:3px; }
   .kb-remove { border:0; background:transparent; color:#a34a3e; cursor:pointer; font:inherit; font-size:12px; }
-  @media (max-width: 900px) { .shell { grid-template-columns: 1fr; } .side { display: none; } .cols { grid-template-columns: 1fr; } }
+  .assistant-list-head { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; margin-bottom:24px; }
+  .assistant-list-head h1 { margin-bottom:6px; }
+  .assistant-list { display:grid; gap:12px; }
+  .assistant-list-card { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(160px,.8fr) minmax(150px,.7fr) auto; align-items:center; gap:18px; padding:18px 20px; background:#fff; border:1px solid var(--line); border-radius:16px; cursor:pointer; transition:border-color .18s, transform .18s, box-shadow .18s; }
+  .assistant-list-card:hover { border-color:#d3bca9; transform:translateY(-1px); box-shadow:0 10px 28px rgba(54,39,28,.07); }
+  .assistant-avatar { width:42px; height:42px; border-radius:13px; display:grid; place-items:center; background:#f3e8da; color:var(--accent); font-family:'Instrument Serif',serif; font-size:22px; }
+  .assistant-card-main { display:flex; align-items:center; gap:13px; min-width:0; }
+  .assistant-card-name { font-weight:700; font-size:15px; }
+  .assistant-card-sub, .assistant-card-label { color:var(--muted); font-size:12px; margin-top:3px; }
+  .assistant-card-value { font-size:13px; font-weight:600; }
+  .assistant-open { width:34px; height:34px; border-radius:50%; border:1px solid var(--line); display:grid; place-items:center; color:var(--ink); }
+  .assistant-empty { padding:54px 24px; text-align:center; background:#fff; border:1px dashed var(--line); border-radius:18px; }
+  .assistant-empty h3 { margin:0 0 7px; font-size:18px; }
+  .assistant-empty p { color:var(--muted); margin:0; font-size:13px; }
+  .editor-back { border:0; background:transparent; color:var(--muted); font:inherit; cursor:pointer; padding:0; }
+  @media (max-width: 900px) { .shell { grid-template-columns: 1fr; } .side { display: none; } .cols, .kb-grid { grid-template-columns: 1fr; } .assistant-list-card { grid-template-columns:1fr auto; } .assistant-list-card > div:nth-child(2), .assistant-list-card > div:nth-child(3) { display:none; } }
 </style>
 </head>
 <body>
@@ -192,9 +207,15 @@
   </aside>
 
   <main class="main">
-    <section id="assistant-view">
-    <div class="crumb">Home <span>›</span> Assistants <span>›</span> <b>Assistant detail</b></div>
-    <h1>Edit ‘Amira’ <span id="plan-chip" style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#efe7d8;color:#574f45;border-radius:100px;padding:5px 12px;"></span></h1>
+    <section id="assistant-list-view">
+      <div class="crumb">Home <span>›</span> <b>Assistants</b></div>
+      <div class="assistant-list-head"><div><h1>Assistants</h1><p class="sub">Create and manage the voice assistants for your business.</p></div></div>
+      <button class="btn-ink" id="create-assistant" style="margin-bottom:22px;">Create assistant</button>
+      <div class="assistant-list" id="assistant-list"></div>
+    </section>
+    <section id="assistant-view" class="view-hidden">
+    <div class="crumb">Home <span>›</span> <button class="editor-back" id="editor-back">Assistants</button> <span>›</span> <b>Assistant detail</b></div>
+    <h1 id="assistant-title">Edit ‘Amira’ <span id="plan-chip" style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#efe7d8;color:#574f45;border-radius:100px;padding:5px 12px;"></span></h1>
     <p class="sub" id="assist-sub">Receptionist for your business</p>
     <div class="assistant-tools">
       <select class="fi" id="assistant-select" aria-label="Saved assistant"><option value="">Unsaved draft</option></select>
@@ -413,9 +434,11 @@ You received a call from {{fromNumber}}.</textarea></div>
   if (!user.email) { location.href = "signup.html"; return; }
   var plan = localStorage.getItem("amira_plan");
   if (!plan) { location.href = "plan.html"; return; }
+  var EDITOR_MODE_KEY = "amiraEditorMode";
+  var editorMode = sessionStorage.getItem(EDITOR_MODE_KEY) || "list";
 
   document.getElementById("plan-chip").textContent = plan + " plan";
-  if (user.business) document.getElementById("assist-sub").textContent = "Receptionist for " + user.business;
+  if (user.business && editorMode !== "new") document.getElementById("assist-sub").textContent = "Receptionist for " + user.business;
 
   function toast(msg) {
     var t = document.getElementById("toast");
@@ -498,7 +521,7 @@ You received a call from {{fromNumber}}.</textarea></div>
       Object.keys(essFields).forEach(function (id) {
         var el = document.getElementById(id);
         if (!el) return;
-        if (id === "f-biz") el.value = localStorage.getItem("amira_biz") || user.business || "";
+        if (id === "f-biz") el.value = localStorage.getItem("amira_biz") || (editorMode === "new" ? "" : user.business || "");
         else el.value = localStorage.getItem(essFields[id]) || "";
         var timer;
         el.addEventListener("input", function () {
@@ -920,7 +943,7 @@ You received a call from {{fromNumber}}.</textarea></div>
         language: lang
       },
       company: {
-        name: ls("amira_biz") || user.business || "",
+        name: ls("amira_biz") || (editorMode === "new" ? "" : user.business || ""),
         industry: ls("amira_industry"),
         website: ls("amira_website"),
         locationHours: ls("amira_hours"),
@@ -947,11 +970,61 @@ You received a call from {{fromNumber}}.</textarea></div>
     for (var i = 0; i < localStorage.length; i++) { var key = localStorage.key(i); if (key && key.indexOf("amira_") === 0 && key !== ASSISTANTS_KEY && key !== ACTIVE_KEY) values[key] = localStorage.getItem(key); }
     return values;
   }
+  // Preserve the single-assistant draft used by earlier dashboard versions by
+  // promoting it into the new list the first time this UI loads.
+  if (!savedAssistants.length && (ls("amira_biz") || ls("amira_assistant_name") || ls("amira_services"))) {
+    activeAssistantId = (crypto.randomUUID ? crypto.randomUUID() : "assistant-" + Date.now());
+    var migratedName = ls("amira_assistant_name") || "Amira";
+    savedAssistants.push({ id: activeAssistantId, name: migratedName, updatedAt: new Date().toISOString(), storage: snapshotStorage(), config: buildAssistantConfig() });
+    localStorage.setItem(ASSISTANTS_KEY, JSON.stringify(savedAssistants)); localStorage.setItem(ACTIVE_KEY, activeAssistantId);
+  }
   function renderAssistantOptions() {
     var select = document.getElementById("assistant-select");
     select.innerHTML = '<option value="">Unsaved draft</option>';
     savedAssistants.forEach(function (item) { var option = document.createElement("option"); option.value = item.id; option.textContent = item.name || "Untitled assistant"; select.appendChild(option); });
     select.value = activeAssistantId;
+  }
+  function restoreAssistant(record) {
+    if (!record) return;
+    Object.keys(record.storage || {}).forEach(function (key) { localStorage.setItem(key, record.storage[key]); });
+    activeAssistantId = record.id; localStorage.setItem(ACTIVE_KEY, activeAssistantId);
+    sessionStorage.setItem(EDITOR_MODE_KEY, "edit");
+    location.reload();
+  }
+  function renderAssistantList() {
+    var list = document.getElementById("assistant-list");
+    if (!savedAssistants.length) {
+      list.innerHTML = '<div class="assistant-empty"><h3>No assistants yet</h3><p>Create your first assistant to configure its voice, behaviour, and business knowledge.</p></div>';
+      return;
+    }
+    list.innerHTML = savedAssistants.map(function (item) {
+      var config = item.config || {}, assistant = config.assistant || {}, company = config.company || {};
+      var name = item.name || assistant.name || "Untitled assistant";
+      var language = String(assistant.language || "en").toUpperCase();
+      var voice = assistant.voice || "Default voice";
+      var companyName = company.name || "No business assigned";
+      return '<div class="assistant-list-card" data-assistant-id="' + historyEsc(item.id) + '" tabindex="0" role="button" aria-label="Open ' + historyEsc(name) + '">' +
+        '<div class="assistant-card-main"><div class="assistant-avatar">' + historyEsc(name.slice(0, 1).toUpperCase()) + '</div><div><div class="assistant-card-name">' + historyEsc(name) + '</div><div class="assistant-card-sub">' + historyEsc(companyName) + '</div></div></div>' +
+        '<div><div class="assistant-card-label">Voice</div><div class="assistant-card-value">' + historyEsc(voice) + '</div></div>' +
+        '<div><div class="assistant-card-label">Language</div><div class="assistant-card-value">' + historyEsc(language) + '</div></div>' +
+        '<span class="assistant-open">›</span></div>';
+    }).join("");
+    list.querySelectorAll(".assistant-list-card").forEach(function (card) {
+      function open() { restoreAssistant(savedAssistants.find(function (item) { return item.id === card.dataset.assistantId; })); }
+      card.addEventListener("click", open);
+      card.addEventListener("keydown", function (event) { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(); } });
+    });
+  }
+  function startNewAssistant() {
+    var removable = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (key && key.indexOf("amira_") === 0 && key !== "amira_user" && key !== "amira_plan") removable.push(key);
+    }
+    removable.forEach(function (key) { localStorage.removeItem(key); });
+    localStorage.removeItem(ACTIVE_KEY); activeAssistantId = "";
+    sessionStorage.setItem(EDITOR_MODE_KEY, "new");
+    location.reload();
   }
   document.getElementById("save-assistant").addEventListener("click", function () {
     var suggested = ls("amira_assistant_name") || "Amira";
@@ -962,22 +1035,24 @@ You received a call from {{fromNumber}}.</textarea></div>
     var index = savedAssistants.findIndex(function (item) { return item.id === activeAssistantId; });
     if (index >= 0) savedAssistants[index] = record; else savedAssistants.push(record);
     localStorage.setItem(ASSISTANTS_KEY, JSON.stringify(savedAssistants)); localStorage.setItem(ACTIVE_KEY, activeAssistantId);
-    document.querySelector("h1").firstChild.nodeValue = "Edit ‘" + name + "’ "; document.getElementById("save-state").textContent = "Saved"; renderAssistantOptions(); toast("Assistant saved");
+    editorMode = "edit"; sessionStorage.setItem(EDITOR_MODE_KEY, editorMode);
+    document.getElementById("assistant-title").firstChild.nodeValue = "Edit ‘" + name + "’ "; document.getElementById("save-state").textContent = "Saved"; renderAssistantOptions(); renderAssistantList(); toast("Assistant saved");
   });
   document.getElementById("assistant-select").addEventListener("change", function (event) {
     activeAssistantId = event.target.value; localStorage.setItem(ACTIVE_KEY, activeAssistantId);
     var record = savedAssistants.find(function (item) { return item.id === activeAssistantId; }); if (!record) return;
-    Object.keys(record.storage || {}).forEach(function (key) { localStorage.setItem(key, record.storage[key]); }); location.reload();
+    restoreAssistant(record);
   });
   document.getElementById("new-assistant").addEventListener("click", async function () {
     if (live) await cleanup();
-    activeAssistantId = ""; localStorage.removeItem(ACTIVE_KEY);
-    ["amira_assistant_name","amira_biz","amira_industry","amira_website","amira_hours","amira_services","amira_startmsg","amira_custom_prompt","amira_answer_source","amira_answer_faqs","amira_kb"].forEach(function (key) { localStorage.removeItem(key); });
-    location.reload();
+    startNewAssistant();
   });
+  document.getElementById("create-assistant").addEventListener("click", startNewAssistant);
   renderAssistantOptions();
+  renderAssistantList();
   var activeRecord = savedAssistants.find(function (item) { return item.id === activeAssistantId; });
-  if (activeRecord && activeRecord.name) document.querySelector("h1").firstChild.nodeValue = "Edit ‘" + activeRecord.name + "’ ";
+  if (activeRecord && activeRecord.name) document.getElementById("assistant-title").firstChild.nodeValue = "Edit ‘" + activeRecord.name + "’ ";
+  if (editorMode === "new") document.getElementById("assistant-title").firstChild.nodeValue = "Create assistant ";
 
   var GREETINGS = {
     en:function(c,a){return "Thank you for calling " + c + ". This is " + a + ". How can I help you today?";},
@@ -1113,20 +1188,24 @@ You received a call from {{fromNumber}}.</textarea></div>
   renderKnowledgePage();
 
   function showView(view) {
-    document.getElementById("assistant-view").classList.toggle("view-hidden", view !== "assistants");
+    document.getElementById("assistant-list-view").classList.toggle("view-hidden", view !== "assistant-list");
+    document.getElementById("assistant-view").classList.toggle("view-hidden", view !== "assistant-editor");
     document.getElementById("history-view").classList.toggle("view-hidden", view !== "history");
     document.getElementById("knowledge-view").classList.toggle("view-hidden", view !== "knowledge");
-    document.getElementById("nav-assistants").classList.toggle("on", view === "assistants");
+    document.getElementById("nav-assistants").classList.toggle("on", view === "assistant-list" || view === "assistant-editor");
     document.getElementById("nav-history").classList.toggle("on", view === "history");
     document.getElementById("nav-knowledge").classList.toggle("on", view === "knowledge");
-    document.querySelector(".callbar").classList.toggle("view-hidden", view !== "assistants");
+    document.querySelector(".callbar").classList.toggle("view-hidden", view !== "assistant-editor");
     if (view === "history") loadCallHistory();
     if (view === "knowledge") renderKnowledgePage();
+    if (view === "assistant-list") renderAssistantList();
   }
   document.getElementById("nav-history").addEventListener("click", function () { showView("history"); });
   document.getElementById("nav-knowledge").addEventListener("click", function () { showView("knowledge"); });
-  document.getElementById("nav-assistants").addEventListener("click", function () { showView("assistants"); });
+  document.getElementById("nav-assistants").addEventListener("click", function () { sessionStorage.setItem(EDITOR_MODE_KEY, "list"); editorMode = "list"; showView("assistant-list"); });
+  document.getElementById("editor-back").addEventListener("click", function () { sessionStorage.setItem(EDITOR_MODE_KEY, "list"); editorMode = "list"; showView("assistant-list"); });
   document.getElementById("refresh-history").addEventListener("click", loadCallHistory);
+  showView(editorMode === "new" || editorMode === "edit" ? "assistant-editor" : "assistant-list");
 })();
 </script>
 </body>
