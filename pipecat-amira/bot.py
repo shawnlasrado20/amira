@@ -563,7 +563,16 @@ async def run_bot(
 ):
     cfg = LANGUAGE_CONFIG.get(language, LANGUAGE_CONFIG["hi"])
     configured = (assistant_config or {}).get("assistant") or {}
-    greeting = _clean(configured.get("firstMessage"), 500) or cfg["greeting"]
+    company_cfg = (assistant_config or {}).get("company") or {}
+    greeting = _clean(configured.get("firstMessage"), 500)
+    if not greeting and assistant_config:
+        # Receptionist mode but no custom greeting — build one from the business name
+        # so the bot doesn't open with the Arjun/Amira product-demo persona.
+        asst_name = _clean(configured.get("name"), 80) or "Amira"
+        co_name = _clean(company_cfg.get("name"), 160) or "us"
+        greeting = f"Thank you for calling {co_name}! This is {asst_name}, how can I help you today?"
+    else:
+        greeting = greeting or cfg["greeting"]
     system_prompt = _build_system_prompt(cfg["tone"], assistant_config)
     requested_voice = _clean(configured.get("voice"), 40).lower()
     voice = requested_voice if requested_voice in BULBUL_V3_VOICES else cfg["voice"]
