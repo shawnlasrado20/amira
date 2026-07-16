@@ -47,6 +47,11 @@
   .page-title h1 { font-size: 26px; }
   .page-sub { color: var(--muted); font-size: 14px; margin: 0 0 22px 32px; }
   .tabs { display: flex; gap: 26px; border-bottom: 1px solid var(--border); margin-bottom: 26px; }
+  .editor-head { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; margin-bottom:18px; }
+  .editor-actions { display:flex; align-items:center; gap:9px; flex-wrap:wrap; justify-content:flex-end; }
+  .assistant-switcher { display:flex; align-items:center; gap:9px; margin-bottom:18px; padding:12px; background:var(--panel); border:1px solid var(--border); border-radius:12px; }
+  .assistant-switcher select { max-width:320px; }
+  .save-state { color:var(--muted); font-size:12px; min-width:52px; text-align:right; }
   .tab { padding: 10px 2px; font-size: 15px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
   .tab.active { color: var(--text); font-weight: 600; border-bottom-color: var(--accent); }
   .detail-grid { display: grid; grid-template-columns: 340px 1fr; gap: 22px; align-items: start; }
@@ -102,6 +107,16 @@
   .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
   .stat .n { font-size: 26px; font-weight: 800; }
   .stat .l { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .call-card { background:var(--panel); border:1px solid var(--border); border-radius:14px; margin-bottom:12px; overflow:hidden; }
+  .call-row { display:grid; grid-template-columns:1.4fr 1fr .8fr .7fr auto; gap:16px; align-items:center; padding:16px 18px; cursor:pointer; }
+  .call-row:hover { background:var(--panel-2); }
+  .call-detail { display:none; padding:0 18px 18px; border-top:1px solid var(--border); }
+  .call-card.open .call-detail { display:block; }
+  .call-meta { color:var(--muted); font-size:12px; }
+  .call-section { margin-top:18px; }
+  .call-section h4 { font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); margin-bottom:8px; }
+  .transcript-line { padding:8px 10px; border-radius:8px; background:var(--bg-alt); margin-bottom:6px; font-size:13px; }
+  .transcript-line b { color:var(--accent); }
 
   /* dropzone */
   .dropzone { background: var(--panel); border: 1.5px dashed var(--border); border-radius: 14px; padding: 34px; text-align: center; cursor: pointer; transition: border-color .15s, background .15s; }
@@ -145,6 +160,10 @@
     .sidebar { width: 100%; height: auto; position: static; }
     .detail-grid { grid-template-columns: 1fr; }
     .action-bar { transform: translateX(-50%); }
+    .editor-head { flex-direction:column; }
+    .editor-actions { justify-content:flex-start; }
+    .assistant-switcher { align-items:stretch; flex-direction:column; }
+    .assistant-switcher select { max-width:none; }
   }
 </style>
 </head>
@@ -182,8 +201,21 @@
 
       <!-- ASSISTANTS -->
       <section id="view-assistants">
-        <div class="page-title"><span class="back">←</span><h1>Edit Assistant</h1></div>
-        <div class="page-sub">Amira</div>
+        <div class="editor-head">
+          <div><div class="page-title"><span class="back">←</span><h1>Edit Assistant</h1></div><div class="page-sub" id="assistantSubtitle">Amira</div></div>
+          <div class="editor-actions">
+            <span class="save-state" id="saveState">Draft</span>
+            <button class="btn btn-test" id="testBtn" title="Start a browser voice test with this configuration">Test in browser</button>
+            <button class="btn btn-ghost" id="muteBtn" disabled>Mute</button>
+            <button class="btn btn-solid" id="saveBtn">Save assistant</button>
+            <button class="btn btn-gen" id="genBtn">Generate config</button>
+          </div>
+        </div>
+        <div class="assistant-switcher">
+          <label for="assistantSelect" style="font-size:13px;color:var(--muted);">Saved assistant</label>
+          <select class="control" id="assistantSelect" style="padding:9px 34px 9px 12px;"><option value="">Unsaved draft</option></select>
+          <button class="btn-ghost" id="newAssistantBtn" style="padding:9px 14px;">New assistant</button>
+        </div>
         <div class="tabs"><div class="tab active">Behaviour</div><div class="tab">Technical</div></div>
 
         <div class="detail-grid">
@@ -219,7 +251,7 @@
                 <div class="field"><label>Voice</label>
                   <select class="control" id="f-voice"><option>Amira (Gold)</option><option>Olivia</option><option>Holly</option><option>Aaron</option></select>
                 </div>
-                <div class="field"><label>Language</label>
+                <div class="field"><label>Language <span style="color:var(--faint);font-weight:400;">· Sarvam Bulbul v3</span></label>
                   <select class="control" id="f-language"><option value="en">English</option><option value="hi">Hindi</option><option value="ta">Tamil</option><option value="te">Telugu</option><option value="kn">Kannada</option><option value="bn">Bengali</option><option value="mr">Marathi</option><option value="gu">Gujarati</option><option value="ml">Malayalam</option><option value="pa">Punjabi</option><option value="od">Odia</option></select>
                 </div>
               </div>
@@ -313,7 +345,7 @@ A: Yes — vegetarian, vegan, and gluten-free dishes are marked.</textarea>
       <section id="view-home" class="hidden">
         <div class="simple-head"><h1>Home</h1><p>Overview of your AMIRA workspace.</p></div>
         <div class="stat-grid">
-          <div class="stat"><div class="n">1</div><div class="l">Assistant in draft</div></div>
+          <div class="stat"><div class="n" id="home-assistant-count">0</div><div class="l">Saved assistants</div></div>
           <div class="stat"><div class="n">1</div><div class="l">Phone number</div></div>
           <div class="stat"><div class="n" id="home-doc-count">0</div><div class="l">Knowledge documents</div></div>
         </div>
@@ -339,8 +371,8 @@ A: Yes — vegetarian, vegan, and gluten-free dishes are marked.</textarea>
 
       <!-- CALL HISTORY -->
       <section id="view-history" class="hidden">
-        <div class="simple-head"><h1>Call History</h1><p>Recent calls handled by AMIRA.</p></div>
-        <div class="empty">No calls to show yet. Live call data will appear here once wired to AMIRA's call reports.</div>
+        <div class="simple-head"><h1>Call History</h1><p>Browser test calls with transcripts, summaries, estimated costs, and recordings.</p></div>
+        <div id="call-history-list"><div class="empty">Loading calls…</div></div>
       </section>
 
       <!-- ADMIN -->
@@ -352,12 +384,6 @@ A: Yes — vegetarian, vegan, and gluten-free dishes are marked.</textarea>
 
     </div>
   </div>
-</div>
-
-<div class="action-bar" id="actionBar">
-  <span class="assign">⊕ Assign Number</span>
-  <button class="btn btn-test" id="testBtn" title="Start a browser voice test with this configuration">Test in browser</button>
-  <button class="btn btn-gen" id="genBtn">⚙︎ Generate config</button>
 </div>
 
 <audio id="studioRemoteAudio" autoplay></audio>
@@ -382,7 +408,6 @@ A: Yes — vegetarian, vegan, and gluten-free dishes are marked.</textarea>
   const items = document.querySelectorAll(".nav-item");
   const views = document.querySelectorAll("[id^='view-']");
   const crumbLast = document.getElementById("crumb-last");
-  const actionBar = document.getElementById("actionBar");
   const LABELS = { home:"Home", assistants:"Assistant Detail", knowledge:"Knowledge Base", numbers:"Phone Numbers", history:"Call History", payments:"Payments", credit:"Free Credit", apikeys:"API Keys", integrations:"Integrations", users:"Users" };
   items.forEach(item => item.addEventListener("click", () => {
     const v = item.dataset.view;
@@ -390,7 +415,7 @@ A: Yes — vegetarian, vegan, and gluten-free dishes are marked.</textarea>
     views.forEach(s => s.classList.add("hidden"));
     document.getElementById("view-" + v).classList.remove("hidden");
     crumbLast.textContent = LABELS[v] || "Detail";
-    actionBar.style.display = "flex"; // generate is available from any view
+    if(v==="history") loadCallHistory();
   }));
 
   // ---- Ability panel switching ----
@@ -486,10 +511,15 @@ A: Yes — vegetarian, vegan, and gluten-free dishes are marked.</textarea>
   }
 
   let autosaveTimer;
-  document.querySelectorAll("input.control, textarea.control, select.control").forEach(el => {
+  document.querySelectorAll("input.control, textarea.control, select.control:not(#assistantSelect)").forEach(el => {
     el.addEventListener("input", () => {
       clearTimeout(autosaveTimer);
-      autosaveTimer=setTimeout(() => localStorage.setItem("amiraStudioConfig", JSON.stringify(buildConfig())), 250);
+      document.getElementById("saveState").textContent="Unsaved";
+      document.getElementById("assistantSubtitle").textContent=val("f-name") || "Untitled assistant";
+      autosaveTimer=setTimeout(() => {
+        localStorage.setItem("amiraStudioConfig", JSON.stringify(buildConfig()));
+        document.getElementById("saveState").textContent="Draft saved";
+      }, 250);
     });
   });
 
@@ -521,34 +551,163 @@ A: Yes — vegetarian, vegan, and gluten-free dishes are marked.</textarea>
     "f-hours":"company.locationHours", "f-services":"company.servicesPolicies",
     "f-name":"assistant.name", "f-startmsg":"assistant.firstMessage", "f-voice":"assistant.voice",
     "f-language":"assistant.language", "f-prompt":"assistant.systemPrompt",
-    "f-answer-source":"abilities.answerQuestions.knowledgeSource", "f-answer-faqs":"abilities.answerQuestions.qa"
+    "f-answer-source":"abilities.answerQuestions.knowledgeSource", "f-answer-faqs":"abilities.answerQuestions.qa",
+    "f-transfer-to":"abilities.transferCalls.transferTo", "f-transfer-when":"abilities.transferCalls.whenToTransfer",
+    "f-email-to":"abilities.sendEmail.sendTo", "f-email-trigger":"abilities.sendEmail.trigger", "f-email-content":"abilities.sendEmail.content",
+    "f-sms-trigger":"abilities.sendSms.trigger", "f-sms-template":"abilities.sendSms.template",
+    "f-booking-cal":"abilities.bookAppointments.calendar", "f-booking-slot":"abilities.bookAppointments.slotLength",
+    "f-booking-window":"abilities.bookAppointments.bookingWindow", "f-webhooks-url":"abilities.webhooks.endpointUrl"
   };
   const getPath = (obj, path) => path.split(".").reduce((v,k) => v && v[k], obj);
+  const TOGGLE_MAP = {
+    "t-prevent":"assistant.preventInterruption", "t-answer":"abilities.answerQuestions.enabled",
+    "t-transfer":"abilities.transferCalls.enabled", "t-transfer-announce":"abilities.transferCalls.announce",
+    "t-email":"abilities.sendEmail.enabled", "t-sms":"abilities.sendSms.enabled",
+    "t-booking":"abilities.bookAppointments.enabled", "t-webhooks":"abilities.webhooks.enabled"
+  };
+  const ASSISTANTS_KEY="amiraSavedAssistants", ACTIVE_KEY="amiraActiveAssistantId";
+  const defaultConfig=buildConfig();
+  let savedAssistants=[];
+  let activeAssistantId=localStorage.getItem(ACTIVE_KEY) || "";
+  try { savedAssistants=JSON.parse(localStorage.getItem(ASSISTANTS_KEY) || "[]"); } catch(_) { savedAssistants=[]; }
+
+  function applyConfig(config){
+    if(!config) return;
+    Object.entries(FIELD_MAP).forEach(([id,path]) => {
+      const el=document.getElementById(id), value=getPath(config,path);
+      if(el && value != null) el.value=value;
+    });
+    Object.entries(TOGGLE_MAP).forEach(([id,path]) => {
+      const el=document.getElementById(id), enabled=getPath(config,path);
+      if(el && enabled != null) el.classList.toggle("off",!enabled);
+    });
+    kbDocs=Array.isArray(config.knowledgeBase) ? config.knowledgeBase : [];
+    renderDocs();
+    document.getElementById("assistantSubtitle").textContent=config.assistant?.name || "Untitled assistant";
+  }
+  function renderAssistantOptions(){
+    const select=document.getElementById("assistantSelect");
+    select.innerHTML='<option value="">Unsaved draft</option>';
+    savedAssistants.forEach(item => {
+      const option=document.createElement("option"); option.value=item.id;
+      option.textContent=item.config?.assistant?.name || "Untitled assistant"; select.appendChild(option);
+    });
+    select.value=activeAssistantId;
+    document.getElementById("home-assistant-count").textContent=savedAssistants.length;
+  }
+  function persistAssistants(){
+    localStorage.setItem(ASSISTANTS_KEY,JSON.stringify(savedAssistants));
+    localStorage.setItem(ACTIVE_KEY,activeAssistantId);
+    renderAssistantOptions();
+  }
+  document.getElementById("saveBtn").addEventListener("click",()=>{
+    const config=buildConfig();
+    if(!config.assistant.name){ alert("Give the assistant a name before saving."); return; }
+    if(!activeAssistantId) activeAssistantId=(crypto.randomUUID?.() || `assistant-${Date.now()}`);
+    const record={id:activeAssistantId,updatedAt:new Date().toISOString(),config};
+    const index=savedAssistants.findIndex(a=>a.id===activeAssistantId);
+    if(index>=0) savedAssistants[index]=record; else savedAssistants.push(record);
+    localStorage.setItem("amiraStudioConfig",JSON.stringify(config)); persistAssistants();
+    document.getElementById("saveState").textContent="Saved";
+  });
+  document.getElementById("assistantSelect").addEventListener("change",e=>{
+    activeAssistantId=e.target.value; localStorage.setItem(ACTIVE_KEY,activeAssistantId);
+    const record=savedAssistants.find(a=>a.id===activeAssistantId);
+    if(record){ applyConfig(record.config); localStorage.setItem("amiraStudioConfig",JSON.stringify(record.config)); document.getElementById("saveState").textContent="Saved"; }
+  });
+  document.getElementById("newAssistantBtn").addEventListener("click",()=>{
+    stopTest(); activeAssistantId=""; localStorage.removeItem(ACTIVE_KEY);
+    const fresh=JSON.parse(JSON.stringify(defaultConfig));
+    fresh.company={name:"",industry:"",website:"",locationHours:"",servicesPolicies:""};
+    fresh.assistant={...fresh.assistant,name:"New Assistant",firstMessage:"",systemPrompt:""};
+    fresh.abilities.answerQuestions.qa=""; fresh.knowledgeBase=[];
+    applyConfig(fresh); localStorage.setItem("amiraStudioConfig",JSON.stringify(fresh)); renderAssistantOptions();
+    document.getElementById("saveState").textContent="Unsaved";
+  });
+
+  const GREETINGS={
+    en:(c,a)=>`Thank you for calling ${c}. This is ${a}. How can I help you today?`,
+    hi:(c,a)=>`${c} में कॉल करने के लिए धन्यवाद। मैं ${a} हूँ। मैं आपकी कैसे मदद कर सकता हूँ?`,
+    ta:(c,a)=>`${c}-க்கு call பண்ணதுக்கு நன்றி. நான் ${a}. உங்களுக்கு எப்படி help பண்ணலாம்?`,
+    te:(c,a)=>`${c}కి call చేసినందుకు ధన్యవాదాలు. నేను ${a}. మీకు ఎలా సహాయం చేయగలను?`,
+    kn:(c,a)=>`${c}ಗೆ call ಮಾಡಿದ್ದಕ್ಕೆ ಧನ್ಯವಾದಗಳು. ನಾನು ${a}. ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?`,
+    bn:(c,a)=>`${c}-তে কল করার জন্য ধন্যবাদ। আমি ${a}। আপনাকে কীভাবে সাহায্য করতে পারি?`,
+    mr:(c,a)=>`${c} ला कॉल केल्याबद्दल धन्यवाद. मी ${a}. मी तुम्हाला कशी मदत करू?`,
+    gu:(c,a)=>`${c}ને call કરવા બદલ આભાર. હું ${a}. હું તમારી કેવી રીતે મદદ કરી શકું?`,
+    ml:(c,a)=>`${c}-ലേക്ക് call ചെയ്തതിന് നന്ദി. ഞാൻ ${a}. എങ്ങനെ സഹായിക്കാം?`,
+    pa:(c,a)=>`${c} ਨੂੰ call ਕਰਨ ਲਈ ਧੰਨਵਾਦ। ਮੈਂ ${a} ਹਾਂ। ਮੈਂ ਤੁਹਾਡੀ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ?`,
+    od:(c,a)=>`${c}କୁ call କରିଥିବାରୁ ଧନ୍ୟବାଦ। ମୁଁ ${a}। ମୁଁ କିପରି ସାହାଯ୍ୟ କରିପାରିବି?`
+  };
+  document.getElementById("f-language").addEventListener("change",e=>{
+    const company=val("f-company") || "our company", assistant=val("f-name") || "your assistant";
+    document.getElementById("f-startmsg").value=(GREETINGS[e.target.value] || GREETINGS.en)(company,assistant);
+    document.getElementById("f-startmsg").dispatchEvent(new Event("input",{bubbles:true}));
+  });
+
   try {
-    const saved = JSON.parse(localStorage.getItem("amiraStudioConfig") || "null");
-    if(saved){
-      Object.entries(FIELD_MAP).forEach(([id,path]) => {
-        const el=document.getElementById(id), value=getPath(saved,path);
-        if(el && value != null) el.value=value;
-      });
-      kbDocs = Array.isArray(saved.knowledgeBase) ? saved.knowledgeBase : [];
-      renderDocs();
-    }
-  } catch(_) {}
+    const active=savedAssistants.find(a=>a.id===activeAssistantId);
+    const draft=JSON.parse(localStorage.getItem("amiraStudioConfig") || "null");
+    applyConfig(active?.config || draft || defaultConfig);
+  } catch(_) { applyConfig(defaultConfig); }
+  renderAssistantOptions();
 
   // Live test path: Studio config -> n8n -> Pipecat session -> browser WebRTC.
   const START_WEBHOOK_URL = "http://localhost:5678/webhook/amira-start";
   const PIPECAT_BASE_URL = "http://localhost:8000";
   const testBtn = document.getElementById("testBtn");
+  const muteBtn = document.getElementById("muteBtn");
   const studioAudio = document.getElementById("studioRemoteAudio");
-  let testPc=null, testStream=null, testDc=null, testLive=false;
+  let testPc=null, testStream=null, testDc=null, testLive=false, stopping=false, muted=false;
+  let currentCallId=null, callTranscript=[], mediaRecorder=null, recordingChunks=[];
+  let recordingContext=null, recordingDestination=null;
 
-  function stopTest(){
+  function addTranscriptMessage(raw){
+    let message; try{message=JSON.parse(raw)}catch(_){return;}
+    if(message.label!=="rtvi-ai") return;
+    const type=message.type, data=message.data || {}, text=(data.text || "").trim();
+    if(!text || data.final===false) return;
+    if(type==="user-transcription" || type==="bot-transcription"){
+      const speaker=type==="user-transcription" ? "caller" : "assistant";
+      const previous=callTranscript[callTranscript.length-1];
+      if(!previous || previous.speaker!==speaker || previous.text!==text){
+        callTranscript.push({speaker,text,at:new Date().toISOString()});
+      }
+    }
+  }
+
+  function attachRecordingStream(stream){
+    if(!recordingContext || !recordingDestination || !stream?.getAudioTracks().length) return;
+    recordingContext.createMediaStreamSource(stream).connect(recordingDestination);
+  }
+
+  async function finishRecording(){
+    if(!mediaRecorder || mediaRecorder.state==="inactive") return null;
+    return await new Promise(resolve=>{
+      mediaRecorder.addEventListener("stop",()=>resolve(recordingChunks.length ? new Blob(recordingChunks,{type:mediaRecorder.mimeType || "audio/webm"}) : null),{once:true});
+      mediaRecorder.stop();
+    });
+  }
+
+  async function stopTest(){
+    if(stopping) return; stopping=true;
+    testBtn.disabled=true; muteBtn.disabled=true;
+    const recording=await finishRecording();
     if(testStream) testStream.getTracks().forEach(t=>t.stop());
     if(testDc) try{testDc.close()}catch(_){}
     if(testPc) testPc.close();
+    if(recordingContext) try{await recordingContext.close()}catch(_){}
+    if(currentCallId){
+      try{
+        if(recording) await fetch(`${PIPECAT_BASE_URL}/calls/${currentCallId}/recording`,{method:"POST",headers:{"Content-Type":recording.type || "audio/webm"},body:recording});
+        await fetch(`${PIPECAT_BASE_URL}/calls/${currentCallId}/complete`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({transcript:callTranscript})});
+      }catch(err){console.error("Could not finalize call history",err);}
+    }
     testPc=testStream=testDc=null; testLive=false;
+    mediaRecorder=recordingContext=recordingDestination=null; recordingChunks=[]; currentCallId=null; callTranscript=[]; muted=false;
     testBtn.textContent="Test in browser"; testBtn.classList.remove("live");
+    muteBtn.textContent="Mute"; document.getElementById("saveState").textContent="Call saved";
+    testBtn.disabled=false; stopping=false;
+    loadCallHistory();
   }
   function waitForIce(pc){
     if(pc.iceGatheringState==="complete") return Promise.resolve();
@@ -558,7 +717,7 @@ A: Yes — vegetarian, vegan, and gluten-free dishes are marked.</textarea>
     });
   }
   testBtn.addEventListener("click", async()=>{
-    if(testLive){stopTest();return;}
+    if(testLive){await stopTest();return;}
     const config=buildConfig();
     localStorage.setItem("amiraStudioConfig",JSON.stringify(config));
     testBtn.disabled=true; testBtn.textContent="Connecting…";
@@ -567,20 +726,54 @@ A: Yes — vegetarian, vegan, and gluten-free dishes are marked.</textarea>
       const sr=await fetch(START_WEBHOOK_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:"Studio test",language,assistantConfig:config})});
       const session=await sr.json();
       if(!sr.ok || !session.success) throw new Error(session.details || "Session could not start");
+      const callStart=await fetch(`${PIPECAT_BASE_URL}/calls/start`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({assistant_name:config.assistant.name,company_name:config.company.name,language})});
+      if(callStart.ok) currentCallId=(await callStart.json()).id;
+      callTranscript=[]; recordingChunks=[];
       testStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}});
+      recordingContext=new AudioContext(); recordingDestination=recordingContext.createMediaStreamDestination();
+      attachRecordingStream(testStream);
+      const mimeType=MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm";
+      mediaRecorder=new MediaRecorder(recordingDestination.stream,{mimeType});
+      mediaRecorder.ondataavailable=e=>{if(e.data.size)recordingChunks.push(e.data);}; mediaRecorder.start(1000);
       testPc=new RTCPeerConnection({iceServers:session.iceConfig.iceServers});
       testDc=testPc.createDataChannel("pipecat-ai");
+      testDc.onmessage=e=>addTranscriptMessage(e.data);
       testStream.getTracks().forEach(t=>testPc.addTrack(t,testStream));
-      testPc.ontrack=e=>{studioAudio.srcObject=e.streams[0];studioAudio.play().catch(()=>{});};
-      testPc.onconnectionstatechange=()=>{if(["failed","disconnected","closed"].includes(testPc?.connectionState))stopTest();};
+      testPc.ontrack=e=>{studioAudio.srcObject=e.streams[0];attachRecordingStream(e.streams[0]);studioAudio.play().catch(()=>{});};
+      testPc.onconnectionstatechange=()=>{if(!stopping && ["failed","disconnected","closed"].includes(testPc?.connectionState))stopTest();};
       await testPc.setLocalDescription(await testPc.createOffer()); await waitForIce(testPc);
       const or=await fetch(`${PIPECAT_BASE_URL}/sessions/${session.sessionId}/api/offer`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sdp:testPc.localDescription.sdp,type:testPc.localDescription.type,language})});
       if(!or.ok) throw new Error("Voice connection failed");
       await testPc.setRemoteDescription(await or.json());
-      testLive=true; testBtn.textContent="End test call"; testBtn.classList.add("live");
-    }catch(err){ console.error(err); stopTest(); alert(`Could not start the test call: ${err.message}`); }
+      testLive=true; testBtn.textContent="End test call"; testBtn.classList.add("live"); muteBtn.disabled=false;
+      document.getElementById("saveState").textContent="● Recording";
+    }catch(err){ console.error(err); await stopTest(); alert(`Could not start the test call: ${err.message}`); }
     finally{testBtn.disabled=false;}
   });
+
+  muteBtn.addEventListener("click",()=>{
+    if(!testStream) return; muted=!muted;
+    testStream.getAudioTracks().forEach(track=>track.enabled=!muted);
+    muteBtn.textContent=muted ? "Unmute" : "Mute";
+  });
+
+  const esc=value=>String(value ?? "").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+  async function loadCallHistory(){
+    const list=document.getElementById("call-history-list"); if(!list)return;
+    try{
+      const response=await fetch(`${PIPECAT_BASE_URL}/calls`); if(!response.ok)throw new Error("history unavailable");
+      const calls=await response.json();
+      if(!calls.length){list.innerHTML='<div class="empty">No browser test calls yet. Start one from an assistant and it will appear here.</div>';return;}
+      list.innerHTML=calls.map(call=>{
+        const when=new Date(call.started_at*1000).toLocaleString();
+        const duration=`${Math.floor(call.duration_seconds/60)}:${String(Math.round(call.duration_seconds%60)).padStart(2,"0")}`;
+        const transcript=(call.transcript||[]).map(line=>`<div class="transcript-line"><b>${esc(line.speaker)}:</b> ${esc(line.text)}</div>`).join("") || '<div class="call-meta">No transcript captured.</div>';
+        const audio=call.has_recording ? `<audio controls preload="none" style="width:100%;" src="${PIPECAT_BASE_URL}/calls/${encodeURIComponent(call.id)}/recording"></audio>` : '<div class="call-meta">No recording available.</div>';
+        return `<div class="call-card"><div class="call-row"><div><b>${esc(call.assistant_name)}</b><div class="call-meta">${esc(call.company_name)}</div></div><div>${esc(when)}</div><div>${esc(call.language.toUpperCase())}</div><div>${duration}</div><div>₹${Number(call.estimated_cost_inr||0).toFixed(2)} ▾</div></div><div class="call-detail"><div class="call-section"><h4>Outcome</h4><div>${esc(call.outcome||"Pending")}</div></div><div class="call-section"><h4>Summary</h4><div>${esc(call.summary||"Summary pending")}</div></div><div class="call-section"><h4>Recording</h4>${audio}</div><div class="call-section"><h4>Full transcript</h4>${transcript}</div><div class="call-meta" style="margin-top:12px;">Estimated cost based on configured STT/TTS rates.</div></div></div>`;
+      }).join("");
+      list.querySelectorAll(".call-row").forEach(row=>row.addEventListener("click",()=>row.parentElement.classList.toggle("open")));
+    }catch(err){list.innerHTML='<div class="empty">Could not load call history. Make sure the voice backend is running.</div>';}
+  }
 </script>
 
 </body>
