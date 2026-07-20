@@ -26,7 +26,7 @@
   .help a { color: var(--accent); font-weight: 600; text-decoration: none; }
 
   /* ── main ── */
-  .main { padding: 22px clamp(20px,3.5vw,48px) 120px; }
+  .main { padding: 22px clamp(20px,3.5vw,48px) 48px; }
   .crumb { font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
   .crumb b { color: var(--ink); font-weight: 500; }
   h1 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: clamp(30px,3.2vw,40px); letter-spacing: -.02em; margin: 18px 0 2px; display: flex; align-items: center; gap: 12px; }
@@ -127,24 +127,48 @@
   .target-row .rm { color: var(--muted); background: none; border: none; cursor: pointer; font-size: 16px; }
   .target-row .rm:hover { color: #b4232a; }
 
-  /* ── floating test bar ── */
-  .callbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 80; display: flex; align-items: center; gap: 10px; background: var(--ink); border-radius: 100px; padding: 8px 10px; box-shadow: 0 20px 50px rgba(20,16,14,.35); }
-  .callbar select { background: #211b16; color: #ede6dc; border: 1px solid #322920; border-radius: 100px; padding: 9px 12px; font-family: inherit; font-size: 13px; font-weight: 600; }
-  .cb-ghost { background: transparent; border: 1px solid #3a2f27; color: #cfc5b6; border-radius: 100px; padding: 10px 18px; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
-  .cb-main { background: var(--accent); border: none; color: #fff; border-radius: 100px; padding: 10px 22px; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
-  .cb-main.live { background: #b4232a; }
-  .cb-status { color: #a79f95; font-size: 12.5px; padding: 0 4px 0 8px; }
+  /* ── editor header (single light block, matches AMIRA cream UI) ── */
+  .editor-header { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 22px 24px 20px; margin-bottom: 22px; }
+  .editor-header .crumb { margin-bottom: 16px; }
+  .editor-header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .editor-header-left { display: flex; align-items: flex-start; gap: 14px; min-width: 0; flex: 1; }
+  .editor-identity { min-width: 0; }
+  .editor-name-row-inline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .editor-header-left .sub { margin: 0; }
+  .editor-back-link { display: inline; background: transparent; border: none; color: var(--muted); font-family: inherit; font-size: inherit; font-weight: inherit; cursor: pointer; padding: 0; }
+  .editor-back-link:hover { color: var(--ink); text-decoration: underline; }
+  .editor-avatar { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #f3e8da, #efe7d8); color: var(--accent); display: grid; place-items: center; font-family: 'Instrument Serif', serif; font-size: 22px; flex-shrink: 0; margin-top: 4px; }
+  .plan-chip { font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; background: #efe7d8; color: #574f45; border-radius: 100px; padding: 5px 12px; vertical-align: middle; }
+  .editor-header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .editor-name-pill { display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--border); border-radius: 100px; padding: 7px 12px 7px 14px; font-family: inherit; font-size: 15px; font-weight: 600; color: var(--ink); cursor: text; max-width: 100%; }
+  .editor-name-pill:hover { border-color: #d3bca9; }
+  .editor-name-pill.editing { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); cursor: text; }
+  .editor-name-pill #assistant-name-display { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+  .editor-name-input { display: none; border: 0; background: transparent; font: inherit; color: inherit; width: 160px; min-width: 100px; padding: 0; outline: none; }
+  .editor-name-pill.editing .editor-name-input { display: block; }
+  .editor-name-pill.editing #assistant-name-display,
+  .editor-name-pill.editing .editor-name-edit { display: none; }
+  .editor-name-edit { color: var(--muted); flex-shrink: 0; pointer-events: none; }
+  .editor-lang { min-width: 120px; font-family: inherit; font-size: 13px; font-weight: 600; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 100px; background: #fff; color: var(--ink); }
+  .editor-save-state { color: var(--muted); font-size: 13px; font-weight: 500; padding: 0 4px; }
+  .editor-call-status { color: var(--muted); font-size: 12px; }
+  .btn-talk { background: var(--accent); border: none; color: #fff; border-radius: 100px; padding: 10px 18px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-talk:hover { filter: brightness(1.04); }
+  .btn-talk.live { background: #b4232a; }
+  .btn-talk:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── floating test bar (legacy, hidden — actions moved to toolbar) ── */
+  .callbar { display: none; }
 
   /* live transcript card above bar */
-  .livecard { display: none; position: fixed; left: 50%; transform: translateX(-50%); bottom: 84px; z-index: 79; width: min(560px, 92vw); background: #211b16; color: #ede6dc; border-radius: 18px; padding: 16px 18px; max-height: 200px; overflow-y: auto; box-shadow: 0 24px 60px rgba(20,16,14,.4); }
+  .livecard { display: none; position: fixed; left: 50%; transform: translateX(-50%); bottom: 28px; z-index: 79; width: min(560px, 92vw); background: #211b16; color: #ede6dc; border-radius: 18px; padding: 16px 18px; max-height: 200px; overflow-y: auto; box-shadow: 0 24px 60px rgba(20,16,14,.4); }
   .livecard.open { display: block; }
   .livecard .cap { font-size: 11px; letter-spacing: .06em; color: #a79f95; margin-bottom: 8px; }
   .livecard p { font-size: 14px; line-height: 1.5; margin: 0 0 6px; }
 
   .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #2fae6b; color: #04210f; font-weight: 600; font-size: 14px; border-radius: 100px; padding: 12px 24px; z-index: 100; box-shadow: 0 14px 34px rgba(0,0,0,.18); opacity: 0; transition: opacity .4s; pointer-events: none; }
   .toast.show { opacity: 1; }
-  .assistant-tools { display:flex; gap:9px; align-items:center; flex-wrap:wrap; margin:14px 0 4px; }
-  .assistant-tools select { min-width:210px; }
+  .assistant-tools { display: none; }
   .view-hidden { display:none !important; }
   .history-head { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:22px; }
   .history-list { display:grid; gap:12px; }
@@ -182,7 +206,7 @@
   .assistant-empty h3 { margin:0 0 7px; font-size:18px; }
   .assistant-empty p { color:var(--muted); margin:0; font-size:13px; }
   .editor-back { border:0; background:transparent; color:var(--muted); font:inherit; cursor:pointer; padding:0; }
-  @media (max-width: 900px) { .shell { grid-template-columns: 1fr; } .side { display: none; } .cols, .kb-grid { grid-template-columns: 1fr; } .assistant-list-card { grid-template-columns:1fr auto; } .assistant-list-card > div:nth-child(2), .assistant-list-card > div:nth-child(3) { display:none; } }
+  @media (max-width: 900px) { .shell { grid-template-columns: 1fr; } .side { display: none; } .cols, .kb-grid { grid-template-columns: 1fr; } .assistant-list-card { grid-template-columns:1fr auto; } .assistant-list-card > div:nth-child(2), .assistant-list-card > div:nth-child(3) { display:none; } .editor-header-top { flex-direction: column; } .editor-header-actions { width: 100%; justify-content: flex-start; } }
 </style>
 </head>
 <body>
@@ -215,14 +239,38 @@
       <div class="assistant-list" id="assistant-list"></div>
     </section>
     <section id="assistant-view" class="view-hidden">
-    <div class="crumb">Home <span>›</span> <button class="editor-back" id="editor-back">Assistants</button> <span>›</span> <b>Assistant detail</b></div>
-    <h1 id="assistant-title">Edit ‘Amira’ <span id="plan-chip" style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#efe7d8;color:#574f45;border-radius:100px;padding:5px 12px;"></span></h1>
-    <p class="sub" id="assist-sub">Receptionist for your business</p>
-    <div class="assistant-tools">
-      <select class="fi" id="assistant-select" aria-label="Saved assistant"><option value="">Unsaved draft</option></select>
-      <button class="btn-ghost" id="new-assistant">New assistant</button>
-      <button class="btn-ink" id="save-assistant">Save assistant</button>
-      <span class="cb-status" id="save-state">Draft</span>
+    <div class="editor-header">
+      <div class="crumb">Home <span>›</span> <button class="editor-back-link" id="editor-back" type="button">Assistants</button> <span>›</span> <b>Assistant detail</b></div>
+      <div class="editor-header-top">
+        <div class="editor-header-left">
+          <div class="editor-avatar" id="toolbar-avatar">A</div>
+          <div class="editor-identity">
+            <div class="editor-name-row-inline">
+              <div class="editor-name-pill" id="assistant-name-btn">
+                <span id="assistant-name-display">Amira</span>
+                <input class="editor-name-input" id="assistant-name-input" type="text" aria-label="Assistant name" maxlength="48" />
+                <svg class="editor-name-edit" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+              </div>
+              <span class="plan-chip" id="plan-chip"></span>
+            </div>
+            <p class="sub" id="assist-sub">Receptionist for your business</p>
+          </div>
+        </div>
+        <div class="editor-header-actions">
+          <select class="editor-lang" id="test-lang" aria-label="Test call language">
+            <option value="en">English</option><option value="hi">हिंदी</option><option value="ta">தமிழ்</option>
+            <option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="bn">বাংলা</option>
+            <option value="mr">मराठी</option><option value="gu">ગુજરાતી</option><option value="ml">മലയാളം</option>
+            <option value="pa">ਪੰਜਾਬੀ</option><option value="od">ଓଡ଼ିଆ</option>
+          </select>
+          <button class="btn-ghost" id="toolbar-history" type="button">History</button>
+          <button class="btn-ghost" id="mute-btn" type="button" disabled>Mute</button>
+          <button class="btn-talk" id="test-btn" type="button">Talk to Assistant</button>
+          <button class="btn-ink" id="save-assistant" type="button">Save</button>
+          <span class="editor-save-state" id="save-state">Draft</span>
+          <span class="editor-call-status" id="cb-status"></span>
+        </div>
+      </div>
     </div>
 
     <div class="tabs">
@@ -406,22 +454,10 @@ You received a call from {{fromNumber}}.</textarea></div>
   </div>
 </div>
 
-<!-- Live transcript + call bar -->
+<!-- Live transcript -->
 <div class="livecard" id="livecard">
   <div class="cap">LIVE TRANSCRIPT</div>
   <div id="live-lines"></div>
-</div>
-<div class="callbar">
-  <select id="test-lang">
-    <option value="en">English</option><option value="hi">हिंदी</option><option value="ta">தமிழ்</option>
-    <option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="bn">বাংলা</option>
-    <option value="mr">मराठी</option><option value="gu">ગુજરાતી</option><option value="ml">മലയാളം</option>
-    <option value="pa">ਪੰਜਾਬੀ</option><option value="od">ଓଡ଼ିଆ</option>
-  </select>
-  <button class="cb-ghost" id="assign-btn">Assign number</button>
-  <button class="cb-ghost" id="mute-btn" disabled>Mute</button>
-  <button class="cb-main" id="test-btn">Test call</button>
-  <span class="cb-status" id="cb-status"></span>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -459,6 +495,46 @@ You received a call from {{fromNumber}}.</textarea></div>
   }
   var EDITOR_MODE_KEY = "amiraEditorMode";
   var editorMode = sessionStorage.getItem(EDITOR_MODE_KEY) || "list";
+
+  function getAssistantName() {
+    return localStorage.getItem("amira_assistant_name") || "Amira";
+  }
+
+  function syncAssistantName(name) {
+    name = (name || getAssistantName()).trim() || "Amira";
+    document.getElementById("assistant-name-display").textContent = name;
+    document.getElementById("toolbar-avatar").textContent = name.slice(0, 1).toUpperCase();
+  }
+
+  var namePill = document.getElementById("assistant-name-btn");
+  var nameInput = document.getElementById("assistant-name-input");
+
+  function startNameEdit() {
+    nameInput.value = getAssistantName();
+    namePill.classList.add("editing");
+    nameInput.focus();
+    nameInput.select();
+  }
+
+  function commitNameEdit() {
+    namePill.classList.remove("editing");
+    var name = nameInput.value.trim() || "Amira";
+    localStorage.setItem("amira_assistant_name", name);
+    syncAssistantName(name);
+    document.getElementById("save-state").textContent = "Draft";
+  }
+
+  namePill.addEventListener("click", function () {
+    if (!namePill.classList.contains("editing")) startNameEdit();
+  });
+  nameInput.addEventListener("blur", commitNameEdit);
+  nameInput.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") { event.preventDefault(); nameInput.blur(); }
+    if (event.key === "Escape") {
+      namePill.classList.remove("editing");
+      nameInput.value = getAssistantName();
+    }
+  });
 
   document.getElementById("plan-chip").textContent = plan + " plan";
   if (user.business && editorMode !== "new") document.getElementById("assist-sub").textContent = "Receptionist for " + user.business;
@@ -872,13 +948,8 @@ You received a call from {{fromNumber}}.</textarea></div>
     toast("Email action saved");
   });
 
-  // ── assign number modal ───────────────────────────────────
+  // ── assign number modal (kept for future; no toolbar entry) ──
   var assignOverlay = document.getElementById("assign-overlay");
-  document.getElementById("assign-btn").addEventListener("click", function () {
-    var owned = localStorage.getItem("amira_number_purchased") === "1";
-    document.getElementById("assign-quota-warning").style.display = owned ? "block" : "none";
-    assignOverlay.classList.add("open");
-  });
   document.getElementById("assign-cancel").addEventListener("click", function () { assignOverlay.classList.remove("open"); });
   assignOverlay.addEventListener("click", function (e) { if (e.target === assignOverlay) assignOverlay.classList.remove("open"); });
   document.getElementById("assign-buy").addEventListener("click", function () {
@@ -951,10 +1022,11 @@ You received a call from {{fromNumber}}.</textarea></div>
 
   function setLive(on) {
     live = on;
-    testBtn.textContent = on ? "End call" : "Test call";
+    testBtn.textContent = on ? "End call" : "Talk to Assistant";
     testBtn.classList.toggle("live", on);
     status.textContent = on ? "on a test call" : "";
     livecard.classList.toggle("open", on);
+    muteBtn.disabled = !on;
     if (!on) { liveLines.innerHTML = ""; partialEls = { user: null, bot: null }; }
   }
 
@@ -1071,12 +1143,6 @@ You received a call from {{fromNumber}}.</textarea></div>
     localStorage.setItem(ASSISTANTS_KEY, JSON.stringify(savedAssistants)); localStorage.setItem(ACTIVE_KEY, activeAssistantId);
     persistAssistantCloud(savedAssistants[0]);
   }
-  function renderAssistantOptions() {
-    var select = document.getElementById("assistant-select");
-    select.innerHTML = '<option value="">Unsaved draft</option>';
-    savedAssistants.forEach(function (item) { var option = document.createElement("option"); option.value = item.id; option.textContent = item.name || "Untitled assistant"; select.appendChild(option); });
-    select.value = activeAssistantId;
-  }
   function restoreAssistant(record) {
     if (!record) return;
     Object.keys(record.storage || {}).forEach(function (key) { localStorage.setItem(key, record.storage[key]); });
@@ -1120,9 +1186,7 @@ You received a call from {{fromNumber}}.</textarea></div>
     location.reload();
   }
   document.getElementById("save-assistant").addEventListener("click", async function () {
-    var suggested = ls("amira_assistant_name") || "Amira";
-    var name = prompt("Assistant name", suggested); if (!name) return;
-    localStorage.setItem("amira_assistant_name", name);
+    var name = getAssistantName();
     if (!activeAssistantId) activeAssistantId = (crypto.randomUUID ? crypto.randomUUID() : "assistant-" + Date.now());
     var record = { id: activeAssistantId, name: name, updatedAt: new Date().toISOString(), storage: snapshotStorage(), config: buildAssistantConfig() };
     var index = savedAssistants.findIndex(function (item) { return item.id === activeAssistantId; });
@@ -1130,23 +1194,23 @@ You received a call from {{fromNumber}}.</textarea></div>
     localStorage.setItem(ASSISTANTS_KEY, JSON.stringify(savedAssistants)); localStorage.setItem(ACTIVE_KEY, activeAssistantId);
     var cloudError = await persistAssistantCloud(record);
     editorMode = "edit"; sessionStorage.setItem(EDITOR_MODE_KEY, editorMode);
-    document.getElementById("assistant-title").firstChild.nodeValue = "Edit ‘" + name + "’ "; document.getElementById("save-state").textContent = cloudError ? "Saved locally" : "Synced"; renderAssistantOptions(); renderAssistantList(); toast(cloudError ? "Saved in this browser; Supabase schema is not ready" : "Assistant saved to your account");
-  });
-  document.getElementById("assistant-select").addEventListener("change", function (event) {
-    activeAssistantId = event.target.value; localStorage.setItem(ACTIVE_KEY, activeAssistantId);
-    var record = savedAssistants.find(function (item) { return item.id === activeAssistantId; }); if (!record) return;
-    restoreAssistant(record);
-  });
-  document.getElementById("new-assistant").addEventListener("click", async function () {
-    if (live) await cleanup();
-    startNewAssistant();
+    syncAssistantName(name);
+    document.getElementById("save-state").textContent = cloudError ? "Saved locally" : "Synced";
+    renderAssistantList();
+    toast(cloudError ? "Saved in this browser; Supabase storage is unavailable" : "Assistant saved to your account");
   });
   document.getElementById("create-assistant").addEventListener("click", startNewAssistant);
-  renderAssistantOptions();
   renderAssistantList();
   var activeRecord = savedAssistants.find(function (item) { return item.id === activeAssistantId; });
-  if (activeRecord && activeRecord.name) document.getElementById("assistant-title").firstChild.nodeValue = "Edit ‘" + activeRecord.name + "’ ";
-  if (editorMode === "new") document.getElementById("assistant-title").firstChild.nodeValue = "Create assistant ";
+  if (editorMode === "new") {
+    syncAssistantName("Amira");
+    document.getElementById("assist-sub").textContent = "Configure your new receptionist";
+  } else if (activeRecord && activeRecord.name) {
+    syncAssistantName(activeRecord.name);
+  } else {
+    syncAssistantName();
+  }
+  if (activeRecord) document.getElementById("save-state").textContent = "Saved";
 
   var GREETINGS = {
     en:function(c,a){return "Thank you for calling " + c + ". This is " + a + ". How can I help you today?";},
@@ -1289,12 +1353,12 @@ You received a call from {{fromNumber}}.</textarea></div>
     document.getElementById("nav-assistants").classList.toggle("on", view === "assistant-list" || view === "assistant-editor");
     document.getElementById("nav-history").classList.toggle("on", view === "history");
     document.getElementById("nav-knowledge").classList.toggle("on", view === "knowledge");
-    document.querySelector(".callbar").classList.toggle("view-hidden", view !== "assistant-editor");
     if (view === "history") loadCallHistory();
     if (view === "knowledge") renderKnowledgePage();
     if (view === "assistant-list") renderAssistantList();
   }
   document.getElementById("nav-history").addEventListener("click", function () { showView("history"); });
+  document.getElementById("toolbar-history").addEventListener("click", function () { showView("history"); });
   document.getElementById("nav-knowledge").addEventListener("click", function () { showView("knowledge"); });
   document.getElementById("nav-assistants").addEventListener("click", function () { sessionStorage.setItem(EDITOR_MODE_KEY, "list"); editorMode = "list"; showView("assistant-list"); });
   document.getElementById("editor-back").addEventListener("click", function () { sessionStorage.setItem(EDITOR_MODE_KEY, "list"); editorMode = "list"; showView("assistant-list"); });

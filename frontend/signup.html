@@ -186,7 +186,13 @@
       if (login && localStorage.getItem("amira_plan")) location.href = "dashboard.html";
       else location.href = "plan.html" + (plan ? "?plan=" + encodeURIComponent(plan) : "");
     } catch (error) {
-      status.textContent = error.message || "Authentication failed. Please try again.";
+      if (error.code === "email_address_invalid") {
+        status.textContent = "Use a real email address that can receive the confirmation message.";
+      } else if (error.code === "email_address_not_authorized") {
+        status.textContent = "Supabase's default email service only allows project-team addresses. Use your Supabase account email or configure custom SMTP.";
+      } else {
+        status.textContent = error.message || "Authentication failed. Please try again.";
+      }
       status.className = "auth-status error";
     } finally {
       btn.disabled = false;
