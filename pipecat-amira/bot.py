@@ -578,15 +578,15 @@ async def run_bot(
     voice = requested_voice if requested_voice in BULBUL_V3_VOICES else cfg["voice"]
     logger.info("Starting voice session: language={}, voice={}, configured={}", language, voice, bool(assistant_config))
 
-    # saaras:v3 replaces saarika:v2.5 (now officially "Legacy" in Sarvam docs).
-    # mode="codemix" outputs English words in English script and Indic words in native
-    # script — the same convention our prompts use — and v3 adds entity preservation
-    # (names/emails for the booking flow) and 8kHz telephony optimization.
+    # saarika:v2.5 (stable streaming model). We were on saaras:v3 + mode="codemix", but its
+    # streaming WebSocket kept failing mid-call ("ASR model call failed", close 1000) after
+    # ~1-2 min of a live call — batch/REST works fine, streaming does not. saarika:v2.5 is the
+    # battle-tested streaming model and stays connected for the whole call. Note: saarika does
+    # NOT support the `mode` param, so it's dropped here.
     stt = SarvamSTTService(
         api_key=os.getenv("SARVAM_API_KEY"),
-        mode="codemix",
         settings=SarvamSTTService.Settings(
-            model="saaras:v3",
+            model="saarika:v2.5",
             language=cfg["stt"],
         ),
     )
