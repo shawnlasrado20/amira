@@ -538,7 +538,9 @@
       }
 
       if (type === "bot-transcription" && data?.text?.trim()) {
-        const text = data.text.trim();
+        // Strip the hidden [[show:section]] tour marker so it never shows in the transcript.
+        const text = data.text.trim().replace(/^\s*\[\[show:\s*\w+\s*\]\]\s*/i, "");
+        if (!text) return;
         const isFinal = data.final !== false;
         if (!partialBotEl) {
           const { el, body } = makeLine("bot", text, !isFinal);
