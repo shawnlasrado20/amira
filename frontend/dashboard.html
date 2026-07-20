@@ -246,7 +246,7 @@
           <div class="editor-identity">
             <div class="editor-name-row-inline">
               <div class="editor-name-pill" id="assistant-name-btn">
-                <span id="assistant-name-display">Amira</span>
+                <span id="assistant-name-display">Untitled</span>
                 <input class="editor-name-input" id="assistant-name-input" type="text" aria-label="Assistant name" maxlength="48" />
                 <svg class="editor-name-edit" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
               </div>
@@ -256,12 +256,6 @@
           </div>
         </div>
         <div class="editor-header-actions">
-          <select class="editor-lang" id="test-lang" aria-label="Test call language">
-            <option value="en">English</option><option value="hi">हिंदी</option><option value="ta">தமிழ்</option>
-            <option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="bn">বাংলা</option>
-            <option value="mr">मराठी</option><option value="gu">ગુજરાતી</option><option value="ml">മലയാളം</option>
-            <option value="pa">ਪੰਜਾਬੀ</option><option value="od">ଓଡ଼ିଆ</option>
-          </select>
           <button class="btn-ghost" id="toolbar-history" type="button">History</button>
           <button class="btn-ghost" id="mute-btn" type="button" disabled>Mute</button>
           <button class="btn-talk" id="test-btn" type="button">Talk to Assistant</button>
@@ -474,11 +468,11 @@ You received a call from {{fromNumber}}.</textarea></div>
   var editorMode = sessionStorage.getItem(EDITOR_MODE_KEY) || "list";
 
   function getAssistantName() {
-    return localStorage.getItem("amira_assistant_name") || "Amira";
+    return localStorage.getItem("amira_assistant_name") || "Untitled";
   }
 
   function syncAssistantName(name) {
-    name = (name || getAssistantName()).trim() || "Amira";
+    name = (name || getAssistantName()).trim() || "Untitled";
     document.getElementById("assistant-name-display").textContent = name;
     document.getElementById("toolbar-avatar").textContent = name.slice(0, 1).toUpperCase();
   }
@@ -495,7 +489,7 @@ You received a call from {{fromNumber}}.</textarea></div>
 
   function commitNameEdit() {
     namePill.classList.remove("editing");
-    var name = nameInput.value.trim() || "Amira";
+    var name = nameInput.value.trim() || "Untitled";
     localStorage.setItem("amira_assistant_name", name);
     syncAssistantName(name);
     document.getElementById("save-state").textContent = "Draft";
@@ -548,7 +542,12 @@ You received a call from {{fromNumber}}.</textarea></div>
          '<label class="fl">Services &amp; policies</label><textarea class="fi" id="f-services" placeholder="Popular dishes, prices, booking rules, anything Amira should know…"></textarea>' +
          '<label class="fl">Start message (greeting)</label><textarea class="fi" id="f-startmsg" placeholder="Leave blank to use the default greeting in each language"></textarea>' +
          '<div class="prow" id="voice-row" style="margin-top:14px;"><div><div class="t">Voice</div><div class="d" id="voice-row-desc">Warm female · natural Indian accent</div></div><span>›</span></div>' +
-         '<div class="prow"><div><div class="t">Languages</div><div class="d">All 11 — auto-detected per caller</div></div><span>›</span></div>' +
+         '<label class="fl">Language</label><select class="fi" id="f-lang-select">' +
+           '<option value="en">English</option><option value="hi">हिंदी (Hindi)</option><option value="ta">தமிழ் (Tamil)</option>' +
+           '<option value="te">తెలుగు (Telugu)</option><option value="kn">ಕನ್ನಡ (Kannada)</option><option value="bn">বাংলা (Bengali)</option>' +
+           '<option value="mr">मराठी (Marathi)</option><option value="gu">ગુજરાતી (Gujarati)</option><option value="ml">മലയാളം (Malayalam)</option>' +
+           '<option value="pa">ਪੰਜਾਬੀ (Punjabi)</option><option value="od">ଓଡ଼ିଆ (Odia)</option></select>' +
+         '<div class="prow" style="margin-top:6px;"><div><div class="t">Auto-detect</div><div class="d">Amira also switches automatically to whatever language the caller speaks</div></div><span style="color:#2fae6b;font-weight:700;">✓</span></div>' +
          '<button class="save-mini" id="save-essentials">Save</button>' },
     answers: { t: "Answer questions", d: "Amira answers caller questions from your knowledge.",
       b: '<label class="fl">Knowledge source</label><input class="fi" id="f-answer-source" placeholder="e.g. Saffron House FAQs" />' +
@@ -637,11 +636,20 @@ You received a call from {{fromNumber}}.</textarea></div>
           }, 300);
         });
       });
+      // Language selector (Essentials) — persists to amira_language + updates greeting.
+      var langSel = document.getElementById("f-lang-select");
+      if (langSel) {
+        langSel.value = localStorage.getItem("amira_language") || "en";
+        langSel.addEventListener("change", function () {
+          if (window.applyLanguage) window.applyLanguage(langSel.value);
+        });
+      }
       essSave.addEventListener("click", function () {
         Object.keys(essFields).forEach(function (id) {
           var el = document.getElementById(id);
           if (el) localStorage.setItem(essFields[id], el.value);
         });
+        if (langSel && window.applyLanguage) window.applyLanguage(langSel.value);
         updateAbilityStatuses();
         toast("Changes saved!");
       });
@@ -1049,10 +1057,10 @@ You received a call from {{fromNumber}}.</textarea></div>
   // use the RECEPTIONIST persona with the business's own info — not the demo persona.
   function ls(key) { return localStorage.getItem(key) || ""; }
   function buildAssistantConfig() {
-    var lang = document.getElementById("test-lang").value;
+    var lang = (localStorage.getItem("amira_language") || "en");
     return {
       assistant: {
-        name: ls("amira_assistant_name") || "Amira",
+        name: ls("amira_assistant_name") || "Untitled",
         firstMessage: ls("amira_startmsg"),     // blank -> bot falls back to per-language greeting
         systemPrompt: ls("amira_custom_prompt"),
         voice: ls("amira_voice"),
@@ -1090,7 +1098,7 @@ You received a call from {{fromNumber}}.</textarea></div>
   // promoting it into the new list the first time this UI loads.
   if (!savedAssistants.length && (ls("amira_biz") || ls("amira_assistant_name") || ls("amira_services"))) {
     activeAssistantId = (crypto.randomUUID ? crypto.randomUUID() : "assistant-" + Date.now());
-    var migratedName = ls("amira_assistant_name") || "Amira";
+    var migratedName = ls("amira_assistant_name") || "Untitled";
     savedAssistants.push({ id: activeAssistantId, name: migratedName, updatedAt: new Date().toISOString(), storage: snapshotStorage(), config: buildAssistantConfig() });
     localStorage.setItem(ASSISTANTS_KEY, JSON.stringify(savedAssistants)); localStorage.setItem(ACTIVE_KEY, activeAssistantId);
   }
@@ -1151,7 +1159,7 @@ You received a call from {{fromNumber}}.</textarea></div>
   renderAssistantList();
   var activeRecord = savedAssistants.find(function (item) { return item.id === activeAssistantId; });
   if (editorMode === "new") {
-    syncAssistantName("Amira");
+    syncAssistantName("Untitled");
     document.getElementById("assist-sub").textContent = "Configure your new receptionist";
   } else if (activeRecord && activeRecord.name) {
     syncAssistantName(activeRecord.name);
@@ -1173,12 +1181,14 @@ You received a call from {{fromNumber}}.</textarea></div>
     pa:function(c,a){return c + " ਨੂੰ call ਕਰਨ ਲਈ ਧੰਨਵਾਦ। ਮੈਂ " + a + " ਹਾਂ। ਮੈਂ ਤੁਹਾਡੀ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ?";},
     od:function(c,a){return c + "କୁ call କରିଥିବାରୁ ଧନ୍ୟବାଦ। ମୁଁ " + a + "। ମୁଁ କିପରି ସାହାଯ୍ୟ କରିପାରିବି?";}
   };
-  document.getElementById("test-lang").value = ls("amira_language") || "en";
-  document.getElementById("test-lang").addEventListener("change", function (event) {
-    var lang = event.target.value, company = ls("amira_biz") || user.business || "our company", assistant = ls("amira_assistant_name") || "Amira";
-    localStorage.setItem("amira_language", lang); localStorage.setItem("amira_startmsg", (GREETINGS[lang] || GREETINGS.en)(company, assistant));
-    toast("Language and greeting updated");
-  });
+  // Language now lives in the Essentials panel (#f-lang-select), not the header.
+  // It's wired when that panel opens (see openPanel); the value persists in
+  // amira_language so the test call can read it regardless of which panel is open.
+  window.applyLanguage = function (lang) {
+    var company = ls("amira_biz") || user.business || "our company", assistant = ls("amira_assistant_name") || "Untitled";
+    localStorage.setItem("amira_language", lang);
+    localStorage.setItem("amira_startmsg", (GREETINGS[lang] || GREETINGS.en)(company, assistant));
+  };
 
   async function startTest() {
     connecting = true;
@@ -1188,7 +1198,7 @@ You received a call from {{fromNumber}}.</textarea></div>
       var cfg = buildAssistantConfig();
       var startRes = await fetch(START_WEBHOOK_URL, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: user.business || "Dashboard test", language: document.getElementById("test-lang").value, assistantConfig: cfg })
+        body: JSON.stringify({ name: user.business || "Dashboard test", language: (localStorage.getItem("amira_language") || "en"), assistantConfig: cfg })
       });
       var session = await startRes.json();
       if (!startRes.ok || !session.success) throw new Error("session failed");
@@ -1216,7 +1226,7 @@ You received a call from {{fromNumber}}.</textarea></div>
       await waitIce(pc);
       var offerRes = await fetch(PIPECAT_BASE_URL + "/sessions/" + session.sessionId + "/api/offer", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sdp: pc.localDescription.sdp, type: pc.localDescription.type, language: document.getElementById("test-lang").value })
+        body: JSON.stringify({ sdp: pc.localDescription.sdp, type: pc.localDescription.type, language: (localStorage.getItem("amira_language") || "en") })
       });
       if (!offerRes.ok) throw new Error("offer failed");
       await pc.setRemoteDescription(await offerRes.json());
