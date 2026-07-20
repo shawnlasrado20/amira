@@ -203,6 +203,7 @@
     <div class="nav-item">API Keys</div>
     <div class="nav-item">Integrations</div>
     <div class="nav-item">Users</div>
+    <div class="nav-item" id="sign-out">Sign out</div>
     <div class="help">Find instructions and guides from our team here.<br><a href="#">Open documentation</a></div>
   </aside>
 
@@ -426,14 +427,36 @@ You received a call from {{fromNumber}}.</textarea></div>
 <div class="toast" id="toast"></div>
 <audio id="remoteAudio" autoplay playsinline style="display:none;"></audio>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 <script>
-(function () {
+(async function () {
   // ── guard + personalization ──────────────────────────────
+  if (!window.amiraSupabase) { location.href = "signup.html#login"; return; }
+  var authResult = await window.amiraSupabase.auth.getSession();
+  var authUser = authResult.data.session && authResult.data.session.user;
+  if (!authUser) { location.href = "signup.html#login"; return; }
   var user = {};
   try { user = JSON.parse(localStorage.getItem("amira_user") || "{}"); } catch (e) {}
-  if (!user.email) { location.href = "signup.html"; return; }
-  var plan = localStorage.getItem("amira_plan");
+  var legacyUserEmail = String(user.email || "").toLowerCase();
+  var profileResult = await window.amiraSupabase.from("profiles").select("business_name,phone,plan").eq("id", authUser.id).maybeSingle();
+  if (profileResult.data) {
+    user = { email: authUser.email || "", business: profileResult.data.business_name || "", phone: profileResult.data.phone || "" };
+    localStorage.setItem("amira_user", JSON.stringify(user));
+  } else {
+    user.email = authUser.email || user.email || "";
+    user.business = (authUser.user_metadata && authUser.user_metadata.business_name) || user.business || "";
+  }
+  var plan = (profileResult.data && profileResult.data.plan) || localStorage.getItem("amira_plan");
   if (!plan) { location.href = "plan.html"; return; }
+  localStorage.setItem("amira_plan", plan);
+  var cloudAssistantRecords = null;
+  var cloudResult = await window.amiraSupabase.from("assistants").select("id,name,config,browser_state,updated_at").order("updated_at", { ascending: false });
+  if (!cloudResult.error) {
+    cloudAssistantRecords = (cloudResult.data || []).map(function (row) { return { id: row.id, name: row.name, config: row.config || {}, storage: row.browser_state || {}, updatedAt: row.updated_at }; });
+  } else {
+    console.warn("Supabase assistant storage unavailable; using browser fallback.", cloudResult.error.message);
+  }
   var EDITOR_MODE_KEY = "amiraEditorMode";
   var editorMode = sessionStorage.getItem(EDITOR_MODE_KEY) || "list";
 
@@ -446,6 +469,12 @@ You received a call from {{fromNumber}}.</textarea></div>
     t.classList.add("show");
     setTimeout(function () { t.classList.remove("show"); }, 3200);
   }
+  document.getElementById("sign-out").addEventListener("click", async function () {
+    await window.amiraSupabase.auth.signOut();
+    localStorage.removeItem("amira_user"); localStorage.removeItem("amira_plan");
+    sessionStorage.removeItem("amiraEditorMode");
+    location.href = "signup.html#login";
+  });
   if (new URLSearchParams(location.search).get("welcome")) {
     toast("Trial started — welcome to Amira!");
     history.replaceState(null, "", "dashboard.html");
@@ -1007,12 +1036,31 @@ You received a call from {{fromNumber}}.</textarea></div>
   // Multiple assistants are browser-local for the prototype. Each record snapshots all
   // dashboard configuration keys, so loading one restores every ability and business field.
   var ASSISTANTS_KEY = "amiraSavedAssistants", ACTIVE_KEY = "amiraActiveAssistantId";
-  var savedAssistants = [], activeAssistantId = localStorage.getItem(ACTIVE_KEY) || "";
-  try { savedAssistants = JSON.parse(localStorage.getItem(ASSISTANTS_KEY) || "[]"); } catch (_) { savedAssistants = []; }
+  var localAssistants = [], activeAssistantId = localStorage.getItem(ACTIVE_KEY) || "";
+  try { localAssistants = JSON.parse(localStorage.getItem(ASSISTANTS_KEY) || "[]"); } catch (_) { localAssistants = []; }
+  var savedAssistants = cloudAssistantRecords === null ? localAssistants : (cloudAssistantRecords.length ? cloudAssistantRecords : localAssistants);
+  var shouldMigrateAssistants = cloudAssistantRecords !== null && !cloudAssistantRecords.length && localAssistants.length && legacyUserEmail === String(authUser.email || "").toLowerCase();
   function snapshotStorage() {
     var values = {};
     for (var i = 0; i < localStorage.length; i++) { var key = localStorage.key(i); if (key && key.indexOf("amira_") === 0 && key !== ASSISTANTS_KEY && key !== ACTIVE_KEY) values[key] = localStorage.getItem(key); }
     return values;
+  }
+  async function persistAssistantCloud(record) {
+    var result = await window.amiraSupabase.from("assistants").upsert({
+      id: record.id,
+      user_id: authUser.id,
+      name: record.name,
+      config: record.config || {},
+      browser_state: record.storage || {},
+      updated_at: record.updatedAt || new Date().toISOString()
+    }, { onConflict: "id" });
+    if (result.error) console.error("Could not save assistant to Supabase:", result.error.message);
+    return result.error;
+  }
+  if (shouldMigrateAssistants) {
+    Promise.all(savedAssistants.map(persistAssistantCloud)).then(function (errors) {
+      if (!errors.some(Boolean)) toast("Your saved assistants are now synced to your account");
+    });
   }
   // Preserve the single-assistant draft used by earlier dashboard versions by
   // promoting it into the new list the first time this UI loads.
@@ -1021,6 +1069,7 @@ You received a call from {{fromNumber}}.</textarea></div>
     var migratedName = ls("amira_assistant_name") || "Amira";
     savedAssistants.push({ id: activeAssistantId, name: migratedName, updatedAt: new Date().toISOString(), storage: snapshotStorage(), config: buildAssistantConfig() });
     localStorage.setItem(ASSISTANTS_KEY, JSON.stringify(savedAssistants)); localStorage.setItem(ACTIVE_KEY, activeAssistantId);
+    persistAssistantCloud(savedAssistants[0]);
   }
   function renderAssistantOptions() {
     var select = document.getElementById("assistant-select");
@@ -1070,7 +1119,7 @@ You received a call from {{fromNumber}}.</textarea></div>
     sessionStorage.setItem(EDITOR_MODE_KEY, "new");
     location.reload();
   }
-  document.getElementById("save-assistant").addEventListener("click", function () {
+  document.getElementById("save-assistant").addEventListener("click", async function () {
     var suggested = ls("amira_assistant_name") || "Amira";
     var name = prompt("Assistant name", suggested); if (!name) return;
     localStorage.setItem("amira_assistant_name", name);
@@ -1079,8 +1128,9 @@ You received a call from {{fromNumber}}.</textarea></div>
     var index = savedAssistants.findIndex(function (item) { return item.id === activeAssistantId; });
     if (index >= 0) savedAssistants[index] = record; else savedAssistants.push(record);
     localStorage.setItem(ASSISTANTS_KEY, JSON.stringify(savedAssistants)); localStorage.setItem(ACTIVE_KEY, activeAssistantId);
+    var cloudError = await persistAssistantCloud(record);
     editorMode = "edit"; sessionStorage.setItem(EDITOR_MODE_KEY, editorMode);
-    document.getElementById("assistant-title").firstChild.nodeValue = "Edit ‘" + name + "’ "; document.getElementById("save-state").textContent = "Saved"; renderAssistantOptions(); renderAssistantList(); toast("Assistant saved");
+    document.getElementById("assistant-title").firstChild.nodeValue = "Edit ‘" + name + "’ "; document.getElementById("save-state").textContent = cloudError ? "Saved locally" : "Synced"; renderAssistantOptions(); renderAssistantList(); toast(cloudError ? "Saved in this browser; Supabase schema is not ready" : "Assistant saved to your account");
   });
   document.getElementById("assistant-select").addEventListener("change", function (event) {
     activeAssistantId = event.target.value; localStorage.setItem(ACTIVE_KEY, activeAssistantId);

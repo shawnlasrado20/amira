@@ -15,3 +15,5 @@ npm-debug.log*
 
 # Local n8n runtime/database backups
 .n8n-backup/
+frontend/server.out.log
+frontend/server.err.log

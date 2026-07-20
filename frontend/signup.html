@@ -30,6 +30,9 @@
   .cta:hover { transform: translateY(-2px); box-shadow: 0 14px 30px color-mix(in srgb, var(--accent) 40%, transparent); }
   .alt { text-align: center; font-size: 14px; color: var(--muted); margin-top: 20px; }
   .alt a { color: var(--ink); font-weight: 600; text-decoration: none; border-bottom: 1.5px solid var(--accent); cursor: pointer; }
+  .auth-status { min-height: 20px; margin: 14px 0 0; font-size: 13px; line-height: 1.5; color: #6b6156; text-align: center; }
+  .auth-status.error { color: #b4232a; }
+  .auth-status.success { color: #237a4b; }
   .pane-side { background: var(--ink); color: #f6f1e9; display: flex; flex-direction: column; justify-content: center; padding: clamp(32px,6vw,80px); position: relative; overflow: hidden; }
   .pane-side::before { content: ''; position: absolute; top: -140px; right: -100px; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--accent) 35%, transparent), transparent 70%); filter: blur(40px); }
   .stars { color: var(--accent); font-size: 22px; letter-spacing: 3px; margin-bottom: 22px; }
@@ -78,6 +81,7 @@
       </div>
 
       <button class="cta" id="submit-btn">Continue</button>
+      <p class="auth-status" id="auth-status" role="status"></p>
       <p class="alt" id="mode-toggle">Already have an account? <a id="toggle-link">Log in</a></p>
     </div>
   </div>
@@ -100,6 +104,8 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 <script>
 (function () {
   var login = location.hash === "#login";
@@ -112,6 +118,7 @@
   var btn = document.getElementById("submit-btn");
   var fBusiness = document.getElementById("f-business");
   var fPhone = document.getElementById("f-phone");
+  var status = document.getElementById("auth-status");
 
   function render() {
     title.textContent = login ? "Welcome back" : "Create your account";
@@ -122,12 +129,12 @@
     modeToggle.childNodes[0].textContent = login ? "New to Amira? " : "Already have an account? ";
     toggle.textContent = login ? "Create an account" : "Log in";
   }
-  toggle.addEventListener("click", function () { login = !login; render(); });
+  toggle.addEventListener("click", function () { login = !login; status.textContent = ""; status.className = "auth-status"; render(); });
   render();
 
   function bad(id, isBad) { document.getElementById(id).classList.toggle("bad", isBad); return isBad; }
 
-  btn.addEventListener("click", function () {
+  btn.addEventListener("click", async function () {
     var business = document.getElementById("in-business").value.trim();
     var phone = document.getElementById("in-phone").value.trim();
     var email = document.getElementById("in-email").value.trim();
@@ -141,17 +148,49 @@
     invalid = bad("f-password", password.length < 8) | invalid;
     if (invalid) return;
 
-    var existing = {};
-    try { existing = JSON.parse(localStorage.getItem("amira_user") || "{}"); } catch (e) {}
-    var user = login
-      ? Object.assign(existing, { email: email })
-      : { business: business, phone: phone, email: email };
-    localStorage.setItem("amira_user", JSON.stringify(user));
+    if (!window.amiraSupabase) {
+      status.textContent = "Authentication could not load. Check your internet connection and try again.";
+      status.className = "auth-status error";
+      return;
+    }
 
-    if (login && localStorage.getItem("amira_plan")) {
-      location.href = "dashboard.html";
-    } else {
-      location.href = "plan.html" + (plan ? "?plan=" + plan : "");
+    btn.disabled = true;
+    btn.textContent = login ? "Logging in…" : "Creating account…";
+    status.textContent = "";
+    status.className = "auth-status";
+    try {
+      var result;
+      if (login) {
+        result = await window.amiraSupabase.auth.signInWithPassword({ email: email, password: password });
+      } else {
+        result = await window.amiraSupabase.auth.signUp({
+          email: email,
+          password: password,
+          options: {
+            data: { business_name: business, phone: phone },
+            emailRedirectTo: location.origin + "/plan.html" + (plan ? "?plan=" + encodeURIComponent(plan) : "")
+          }
+        });
+      }
+      if (result.error) throw result.error;
+
+      var user = { business: business || (result.data.user && result.data.user.user_metadata.business_name) || "", phone: phone || (result.data.user && result.data.user.user_metadata.phone) || "", email: email };
+      localStorage.setItem("amira_user", JSON.stringify(user));
+
+      if (!login && !result.data.session) {
+        status.textContent = "Account created. Check your email to confirm your address, then log in.";
+        status.className = "auth-status success";
+        return;
+      }
+
+      if (login && localStorage.getItem("amira_plan")) location.href = "dashboard.html";
+      else location.href = "plan.html" + (plan ? "?plan=" + encodeURIComponent(plan) : "");
+    } catch (error) {
+      status.textContent = error.message || "Authentication failed. Please try again.";
+      status.className = "auth-status error";
+    } finally {
+      btn.disabled = false;
+      render();
     }
   });
 })();

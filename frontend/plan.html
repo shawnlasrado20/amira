@@ -107,11 +107,22 @@
   <p class="note">7-day free trial · No credit card needed today</p>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 <script>
-(function () {
+(async function () {
+  if (!window.amiraSupabase) { location.href = "signup.html#login"; return; }
+  var authResult = await window.amiraSupabase.auth.getSession();
+  var authUser = authResult.data.session && authResult.data.session.user;
+  if (!authUser) { location.href = "signup.html#login"; return; }
   var user = {};
   try { user = JSON.parse(localStorage.getItem("amira_user") || "{}"); } catch (e) {}
-  if (!user.email) { location.href = "signup.html"; return; }
+  var profileResult = await window.amiraSupabase.from("profiles").select("business_name,phone,plan").eq("id", authUser.id).maybeSingle();
+  if (profileResult.data) {
+    user = { email: authUser.email || "", business: profileResult.data.business_name || "", phone: profileResult.data.phone || "" };
+    localStorage.setItem("amira_user", JSON.stringify(user));
+    if (profileResult.data.plan) localStorage.setItem("amira_plan", profileResult.data.plan);
+  }
   if (user.business) {
     document.getElementById("hello").textContent = "Choose a plan for " + user.business;
   }
@@ -132,8 +143,12 @@
   });
   renderSel();
 
-  btn.addEventListener("click", function () {
+  btn.addEventListener("click", async function () {
     if (!selected) return;
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+    var update = await window.amiraSupabase.from("profiles").update({ plan: selected, updated_at: new Date().toISOString() }).eq("id", authUser.id);
+    if (update.error) { btn.disabled = false; renderSel(); alert("Could not save the plan yet. Please apply the Supabase schema and try again."); return; }
     localStorage.setItem("amira_plan", selected);
     location.href = "dashboard.html?welcome=1";
   });
