@@ -1,4 +1,4 @@
-pipecat-ai[daily,smallest,google,groq,silero,webrtc]==1.4.0
+pipecat-ai[smallest,google,groq,silero,webrtc,websocket]==1.4.0
 pipecat-ai-small-webrtc-prebuilt==2.5.0
 pipecat-murf-tts==0.2.6
 fastapi

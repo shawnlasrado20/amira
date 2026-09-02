@@ -780,8 +780,9 @@ def _cake_n_more_config(client_config: dict | None = None) -> dict:
 
 async def bot(runner_args: RunnerArguments):
     """Production runner entry point used by Railway and Pipecat clients."""
-    from pipecat.transports.daily.transport import DailyParams
     from pipecat.transports.base_transport import TransportParams
+    from pipecat.serializers.protobuf import ProtobufFrameSerializer
+    from pipecat.transports.websocket.fastapi import FastAPIWebsocketParams
 
     body = runner_args.body if isinstance(runner_args.body, dict) else {}
     assistant_config = body.get("assistantConfig") or {}
@@ -791,13 +792,15 @@ async def bot(runner_args: RunnerArguments):
     transport = await create_transport(
         runner_args,
         {
-            "daily": lambda: DailyParams(
-                audio_in_enabled=True,
-                audio_out_enabled=True,
-            ),
             "webrtc": lambda: TransportParams(
                 audio_in_enabled=True,
                 audio_out_enabled=True,
+            ),
+            "websocket": lambda: FastAPIWebsocketParams(
+                audio_in_enabled=True,
+                audio_out_enabled=True,
+                add_wav_header=False,
+                serializer=ProtobufFrameSerializer(),
             ),
         },
     )

@@ -11,4 +11,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY pipecat-amira/ ./
 
-CMD ["sh", "-c", "python bot.py --host 0.0.0.0 --port ${PORT} -t daily --no-dialin"]
+CMD ["sh", "-c", "python bot.py --host 0.0.0.0 --port ${PORT} -t websocket --ws-auth none"]

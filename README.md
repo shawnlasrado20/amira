@@ -5,7 +5,7 @@ A client-facing AI receptionist demo for Cake N More. Visitors can speak with Li
 ## Architecture
 
 - **Frontend:** Vite + Pipecat JavaScript client, deployed on Vercel
-- **Realtime transport:** Daily WebRTC
+- **Realtime transport:** Pipecat browser WebSocket
 - **Backend:** Pipecat on Railway
 - **Voice pipeline:** Smallest AI STT → Groq LLM → Murf Falcon TTS
 - **Knowledge:** Cake N More facts are loaded server-side from `pipecat-amira/knowledge/cake-n-more.md`
@@ -31,12 +31,11 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-python bot.py --host 0.0.0.0 --port 7860 -t daily --no-dialin
+python bot.py --host 0.0.0.0 --port 7860 -t websocket --ws-auth none
 ```
 
 Required backend variables:
 
-- `DAILY_API_KEY`
 - `SMALLEST_API_KEY`
 - `MURF_API_KEY`
 - `KORALYN_GROQ_API_KEY` (or `GROQ_API_KEY`)
@@ -49,7 +48,7 @@ Required backend variables:
 3. Import the same repository into Vercel. Vercel uses `vercel.json` and builds only the Cake N More demo.
 4. Set `VITE_API_URL=https://your-service.up.railway.app` in Vercel, then redeploy.
 
-`pipecat-amira/server.py` remains available as the local SmallWebRTC development server. Production uses the Daily runner in `bot.py` so remote visitors can connect reliably.
+`pipecat-amira/server.py` remains available as the local SmallWebRTC development server. The Railway demo uses Pipecat's browser WebSocket runner and needs no separate realtime-transport account.
 
 ## Security
 

@@ -1,5 +1,5 @@
 import { PipecatClient } from "@pipecat-ai/client-js";
-import { DailyTransport } from "@pipecat-ai/daily-transport";
+import { WebSocketTransport } from "@pipecat-ai/websocket-transport";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:7860").replace(/\/$/, "");
 const MAX_CALL_MS = 3 * 60 * 1000;
@@ -149,7 +149,7 @@ async function endCall(title = "Ready when you are", help = "Choose a journey, t
 
 function createClient() {
   return new PipecatClient({
-    transport: new DailyTransport(),
+    transport: new WebSocketTransport(),
     enableCam: false,
     enableMic: true,
     callbacks: {
@@ -192,17 +192,14 @@ async function startCall() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        transport: "daily",
-        createDailyRoom: true,
+        transport: "websocket",
         body: { language: "en", demoPreset: "cake-n-more", assistantConfig: assistantConfig() },
       }),
     });
     if (!response.ok) throw new Error(`Voice service returned ${response.status}`);
-    const { dailyRoom, dailyToken } = await response.json();
-    if (!dailyRoom || !dailyToken) throw new Error("Voice service did not return room credentials");
-    // Pipecat Runner also returns a sessionId. Daily transport 1.4 rejects
-    // unknown connection properties, so pass only its supported fields.
-    await client.connect({ dailyRoom, dailyToken });
+    const { wsUrl } = await response.json();
+    if (!wsUrl) throw new Error("Voice service did not return a WebSocket URL");
+    await client.connect({ wsUrl });
   } catch (cause) {
     await endCall("Could not start the call", "Please try again in a moment.");
     showError(cause?.name === "NotAllowedError" ? "Please allow microphone access to try the demo." : (cause?.message || "The assistant is temporarily unavailable."));
