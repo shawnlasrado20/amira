@@ -188,14 +188,21 @@ async function startCall() {
   botPart = undefined;
   try {
     client = createClient();
-    await client.startBotAndConnect({
-      endpoint: `${API}/start`,
-      requestData: {
+    const response = await fetch(`${API}/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         transport: "daily",
         createDailyRoom: true,
         body: { language: "en", demoPreset: "cake-n-more", assistantConfig: assistantConfig() },
-      },
+      }),
     });
+    if (!response.ok) throw new Error(`Voice service returned ${response.status}`);
+    const { dailyRoom, dailyToken } = await response.json();
+    if (!dailyRoom || !dailyToken) throw new Error("Voice service did not return room credentials");
+    // Pipecat Runner also returns a sessionId. Daily transport 1.4 rejects
+    // unknown connection properties, so pass only its supported fields.
+    await client.connect({ dailyRoom, dailyToken });
   } catch (cause) {
     await endCall("Could not start the call", "Please try again in a moment.");
     showError(cause?.name === "NotAllowedError" ? "Please allow microphone access to try the demo." : (cause?.message || "The assistant is temporarily unavailable."));
