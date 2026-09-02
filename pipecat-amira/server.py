@@ -58,6 +58,8 @@ RATE_TOTAL_PER_MIN = RATE_STT_PER_MIN + RATE_TTS_PER_MIN + RATE_LLM_PER_MIN
 DATA_DIR = Path(__file__).parent / "data"
 RECORDINGS_DIR = DATA_DIR / "recordings"
 CALLS_DB = DATA_DIR / "calls.sqlite3"
+CAKE_N_MORE_DEMO = Path(__file__).parent.parent / "frontend" / "cake-n-more-demo.html"
+CAKE_N_MORE_KNOWLEDGE = Path(__file__).parent / "knowledge" / "cake-n-more.md"
 
 
 def _db() -> sqlite3.Connection:
@@ -143,7 +145,11 @@ app = FastAPI(title="Amira Pipecat Server", lifespan=lifespan)
 # today; tighten allow_origins when this is deployed anywhere public.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        origin.strip()
+        for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+        if origin.strip()
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -324,6 +330,12 @@ async def health():
     return {"status": "ok"}
 
 
+@app.get("/demo/cake-n-more", response_class=FileResponse, include_in_schema=False)
+async def cake_n_more_demo():
+    """Standalone Koralyn prospect demo; it is not part of the Koralyn website."""
+    return FileResponse(CAKE_N_MORE_DEMO)
+
+
 @app.get("/metrics")
 async def metrics():
     now = time.time()
@@ -448,7 +460,22 @@ async def start_session(request: Request):
         request_data = {}
 
     session_id = str(uuid.uuid4())
-    active_sessions[session_id] = request_data.get("body", {})
+    session_body = request_data.get("body", {})
+    if not isinstance(session_body, dict):
+        session_body = {}
+
+    # Keep the full prospect knowledge base on the server instead of embedding it
+    # in the public demo page. The browser supplies the assistant personality and
+    # journey; this file supplies the business facts.
+    if session_body.get("demoPreset") == "cake-n-more":
+        assistant_config = session_body.get("assistantConfig")
+        if isinstance(assistant_config, dict):
+            assistant_config["knowledgeBase"] = [{
+                "name": "Cake N More verified demo knowledge",
+                "text": CAKE_N_MORE_KNOWLEDGE.read_text(encoding="utf-8"),
+            }]
+
+    active_sessions[session_id] = session_body
     logger.info(f"Session registered: {session_id}")
 
     result: dict[str, Any] = {"sessionId": session_id}
@@ -568,4 +595,4 @@ async def sessions_proxy(
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "8000")))

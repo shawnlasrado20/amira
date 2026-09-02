@@ -9,6 +9,14 @@
 # Node
 node_modules/
 npm-debug.log*
+frontend/dist/
+
+# Python runtime
+__pycache__/
+*.py[cod]
+.venv/
+*.sqlite3
+data/
 
 # Claude Code local settings
 .claude/settings.local.json
