@@ -84,7 +84,12 @@ function addLine(who, text, partial = false) {
 }
 
 function updateTranscript(who, data) {
-  const text = String(data?.text || "").replace(/^\s*\[\[show:\s*\w+\s*\]\]\s*/i, "").trim();
+  let text = String(data?.text || "").replace(/^\s*\[\[show:\s*\w+\s*\]\]\s*/i, "").trim();
+  if (who === "bot") {
+    // RTVI observes the raw streamed LLM text before the server-side TTS cleaner.
+    // Mirror that cleaner here so transcript-only artifacts such as "WeWe" never show.
+    text = text.replace(/^(we|i|you|yes|sure|absolutely|the|our|that)(?:\1|\s+\1)\b/i, "$1");
+  }
   if (!text) return;
   const final = data?.final !== false;
   const current = who === "user" ? userPart : botPart;
