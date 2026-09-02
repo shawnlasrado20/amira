@@ -788,6 +788,32 @@ async def bot(runner_args: RunnerArguments):
     assistant_config = body.get("assistantConfig") or {}
     if body.get("demoPreset") == "cake-n-more":
         assistant_config = _cake_n_more_config(assistant_config)
+    elif getattr(runner_args, "transport_type", None) == "websocket" and not body:
+        # The plain browser WebSocket connects directly and has no request body.
+        # This Railway service is dedicated to the Cake N More prospect demo.
+        body = {"language": "en", "demoPreset": "cake-n-more"}
+        assistant_config = _cake_n_more_config({
+            "assistant": {
+                "name": "Lina",
+                "voice": "gu-IN-diya",
+                "firstMessage": "Thank you for calling Cake N More. This is Lina. How can I help you today?",
+                "systemPrompt": (
+                    "Represent Cake N More warmly and concisely. Ask one question at a time. "
+                    "Never claim an order, payment, delivery, or custom design is confirmed. "
+                    "Speak prices as dirhams, never AED or UAE dirhams."
+                ),
+            },
+            "company": {
+                "name": "Cake N More",
+                "industry": "Patisserie and cake shop",
+                "website": "https://cakenmore.com/",
+            },
+            "abilities": {
+                "answerQuestions": {
+                    "qa": "Answer only from the Cake N More knowledge base."
+                }
+            },
+        })
 
     transport = await create_transport(
         runner_args,

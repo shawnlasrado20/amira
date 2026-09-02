@@ -197,9 +197,12 @@ async function startCall() {
       }),
     });
     if (!response.ok) throw new Error(`Voice service returned ${response.status}`);
-    const { wsUrl } = await response.json();
-    if (!wsUrl) throw new Error("Voice service did not return a WebSocket URL");
-    await client.connect({ wsUrl });
+    const session = await response.json();
+    if (!session.wsUrl) throw new Error("Voice service did not return a WebSocket URL");
+    // The generic Pipecat runner sees Railway's private bind address and returns
+    // wss://0.0.0.0:PORT. The public browser socket is on the Railway HTTPS origin.
+    const publicWsUrl = `${API.replace(/^http/, "ws")}/ws-client`;
+    await client.connect({ wsUrl: publicWsUrl });
   } catch (cause) {
     await endCall("Could not start the call", "Please try again in a moment.");
     showError(cause?.name === "NotAllowedError" ? "Please allow microphone access to try the demo." : (cause?.message || "The assistant is temporarily unavailable."));
