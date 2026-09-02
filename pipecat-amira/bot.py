@@ -151,7 +151,7 @@ _RECEPTIONIST_BASE = (
     "You may collect and read details back, then clearly describe the result as a test request. "
 
     "VOICE RULES: Sound warm, capable, and natural. Use one or two short spoken sentences per reply "
-    "unless the caller explicitly asks for detail. Never read a long catalog or give more than four "
+    "unless the caller explicitly asks for detail. Never read a long catalog or give more than three "
     "options at once; narrow by category, occasion, flavour, or budget first. No markdown, lists, "
     "asterisks, emojis, headings, or stage directions. Never repeat the first word of a sentence. "
     "For prices, say '95 dirhams', never 'AED 95', 'UAE dirhams', or '95 D H S'. Use commas and full "
@@ -350,6 +350,15 @@ _TOUR_SECTION_IDS = frozenset(_TOUR_ORDER)
 
 _SECTION_CUE_RE = re.compile(r"^\s*\[\[show:\s*(\w+)\s*\]\]\s*", re.IGNORECASE)
 _SECTION_CUE_MAX_WAIT = 40  # chars buffered before giving up on seeing a marker
+_VOICE_PREFIX_REPEAT_RE = re.compile(
+    r"^(\s*)(we|i|you|yes|sure|absolutely|the|our|that)(?:\2|\s+\2)\b",
+    re.IGNORECASE,
+)
+
+
+def _clean_voice_prefix(text: str) -> str:
+    """Remove occasional streaming duplication such as 'WeWe' before TTS."""
+    return _VOICE_PREFIX_REPEAT_RE.sub(r"\1\2", text, count=1)
 
 
 # What Arjun should cover at each stop — fed to the LLM verbatim on each auto-advance so
@@ -438,7 +447,7 @@ class SectionCueProcessor(FrameProcessor):
                 else:
                     logger.warning(f"Site tour cue with unknown section id: {section!r}")
                 if remainder:
-                    await self.push_frame(LLMTextFrame(text=remainder))
+                    await self.push_frame(LLMTextFrame(text=_clean_voice_prefix(remainder)))
                 return
             if not self._could_be_marker_prefix(self._buffer) or len(self._buffer) > _SECTION_CUE_MAX_WAIT:
                 # No marker in this reply — that's fine: during a full walkthrough the
@@ -446,7 +455,7 @@ class SectionCueProcessor(FrameProcessor):
                 # marker no longer stalls the tour.
                 self._resolved = True
                 flushed, self._buffer = self._buffer, ""
-                await self.push_frame(LLMTextFrame(text=flushed))
+                await self.push_frame(LLMTextFrame(text=_clean_voice_prefix(flushed)))
             return
 
         await self.push_frame(frame, direction)
@@ -800,7 +809,8 @@ async def bot(runner_args: RunnerArguments):
                 "systemPrompt": (
                     "Represent Cake N More warmly and concisely. Ask one question at a time. "
                     "Never claim an order, payment, delivery, or custom design is confirmed. "
-                    "Speak prices as dirhams, never AED or UAE dirhams."
+                    "Speak prices as dirhams, never AED or UAE dirhams. Recommend exactly three "
+                    "relevant products at most, then ask one narrowing question."
                 ),
             },
             "company": {
