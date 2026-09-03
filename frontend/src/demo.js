@@ -4,13 +4,7 @@ import { WebSocketTransport } from "@pipecat-ai/websocket-transport";
 const API = (import.meta.env.VITE_API_URL || "http://localhost:7860").replace(/\/$/, "");
 const MAX_CALL_MS = 3 * 60 * 1000;
 
-const scenarios = [
-  { id: "birthday", title: "Birthday cake", hint: "flavour, size & date", opening: "Thank you for calling Cake N More. This is Lina. Are you looking for a birthday cake or another sweet today?" },
-  { id: "custom", title: "Custom design", hint: "occasion & inspiration", opening: "Thank you for calling Cake N More. This is Lina. Tell me a little about the custom cake you have in mind." },
-  { id: "delivery", title: "Delivery", hint: "location & timing", opening: "Thank you for calling Cake N More. This is Lina. How can I help with your delivery enquiry?" },
-];
-
-let chosen = scenarios[0];
+const opening = "Thank you for calling Cake N More. This is Lina. How can I help you today?";
 let client;
 let tick;
 let callLimit;
@@ -23,7 +17,6 @@ let botPart;
 let statusReset;
 
 const $ = (id) => document.getElementById(id);
-const box = $("scenarios");
 const demo = $("demo");
 const talk = $("talk");
 const mute = $("mute");
@@ -34,27 +27,12 @@ const error = $("error");
 const statusTitle = $("status-title");
 const statusHelp = $("status-help");
 
-function drawScenarios() {
-  box.innerHTML = "";
-  scenarios.forEach((scenario) => {
-    const button = document.createElement("button");
-    button.className = `scenario${scenario.id === chosen.id ? " active" : ""}`;
-    button.innerHTML = `<b>${scenario.title}</b><span>${scenario.hint}</span>`;
-    button.onclick = () => {
-      if (live || connecting) return;
-      chosen = scenario;
-      drawScenarios();
-    };
-    box.appendChild(button);
-  });
-}
-
 function assistantConfig() {
   return {
     assistant: {
       name: "Lina",
       voice: "gu-IN-diya",
-      firstMessage: chosen.opening,
+      firstMessage: opening,
       systemPrompt: "You represent Cake N More. Be warm, concise and helpful. Ask one question at a time. This is a prototype: never claim an order, payment, delivery or custom design is confirmed. Collect order-request details one item at a time, read them back, and say the team will confirm. Speak prices naturally as dirhams, never as AED or UAE dirhams. Do not dump full menus or price lists; narrow the customer choice first.",
     },
     company: {
@@ -141,7 +119,7 @@ function setLive(on) {
   }
 }
 
-async function endCall(title = "Ready when you are", help = "Choose a journey, then start the call.") {
+async function endCall(title = "Ready when you are", help = "Press start, allow microphone access and speak naturally.") {
   const active = client;
   client = undefined;
   if (active) await active.disconnect().catch(() => {});
@@ -220,6 +198,10 @@ async function startCall() {
 }
 
 talk.onclick = startCall;
+$("top-talk").onclick = () => {
+  demo.scrollIntoView({ behavior: "smooth", block: "center" });
+  if (!live && !connecting) startCall();
+};
 mute.onclick = async () => {
   if (!client) return;
   muted = !muted;
@@ -228,5 +210,3 @@ mute.onclick = async () => {
   statusTitle.textContent = muted ? "Microphone muted" : "Call in progress";
   statusHelp.textContent = muted ? "Lina cannot hear you until you unmute." : "Speak naturally—Lina will respond when you pause.";
 };
-
-drawScenarios();
